@@ -8,7 +8,40 @@ import { ParsedCV } from "@shared/schema";
 export async function parseCV(text: string, originalFilename: string): Promise<ParsedCV> {
   const normalizedText = text.toLowerCase();
   
-  // 1. Extract Skills (Keyword matching from a common tech list)
+  // Basic validation check for content
+  if (!text || text.trim().length < 50) {
+    return {
+      skills: [],
+      yearsExperience: 0,
+      jobTitles: [],
+      techStack: [],
+      confidenceScore: 0,
+      failure: {
+        code: "FILE_SIZE_INVALID",
+        message: "The uploaded document appears to be too short to be a valid CV.",
+        actionableStep: "Please ensure you are uploading a complete CV with detailed sections."
+      }
+    };
+  }
+
+  // Check for mostly image-based (low ratio of text to expected length or specific markers)
+  // This is a simple heuristic
+  if (text.length > 500 && text.replace(/\s/g, '').length < 100) {
+    return {
+      skills: [],
+      yearsExperience: 0,
+      jobTitles: [],
+      techStack: [],
+      confidenceScore: 0,
+      failure: {
+        code: "IMAGE_ONLY",
+        message: "We couldn't extract enough text from this file. It might be a scanned image.",
+        actionableStep: "Try exporting your CV as a text-based PDF from Word or Google Docs."
+      }
+    };
+  }
+
+  // 1. Extract Skills
   const commonSkills = [
     "react", "typescript", "javascript", "node.js", "python", "go", "java", "ruby", "rust",
     "css", "html", "sql", "postgresql", "mongodb", "aws", "docker", "kubernetes", "git",
@@ -17,41 +50,37 @@ export async function parseCV(text: string, originalFilename: string): Promise<P
 
   const foundSkills = commonSkills.filter(skill => normalizedText.includes(skill));
 
-  // 2. Extract Years of Experience (Heuristic: Look for "X years", dates)
-  // Simple regex for "X years" or date ranges
+  // Confidence heuristic: ratio of found skills/titles to text length
+  let confidenceScore = Math.min(1, (foundSkills.length * 0.1) + 0.2);
+
+  if (foundSkills.length === 0) {
+    return {
+      skills: [],
+      yearsExperience: 0,
+      jobTitles: [],
+      techStack: [],
+      confidenceScore: 0.1,
+      failure: {
+        code: "MISSING_SECTIONS",
+        message: "We couldn't identify any technical skills in your CV.",
+        actionableStep: "Make sure your CV has a clearly labeled 'Skills' or 'Expertise' section."
+      }
+    };
+  }
+
+  // 2. Extract Years of Experience
   let yearsExperience = 0;
   
-  // Look for "X years"
   const yearsRegex = /(\d+)\+?\s*years?/g;
   let match;
   while ((match = yearsRegex.exec(normalizedText)) !== null) {
     const years = parseInt(match[1]);
-    if (years > yearsExperience && years < 30) { // Cap at 30 to avoid false positives like "2020 years"
+    if (years > yearsExperience && years < 30) {
       yearsExperience = years;
     }
   }
 
-  // Fallback: Calculate from date ranges (simple implementation)
-  // e.g., "2018 - 2022"
-  const dateRangeRegex = /(20\d{2})\s*-\s*(20\d{2}|present)/g;
-  let minYear = 2030;
-  let maxYear = 2000;
-  let hasDates = false;
-  
-  while ((match = dateRangeRegex.exec(normalizedText)) !== null) {
-    hasDates = true;
-    const start = parseInt(match[1]);
-    const end = match[2] === 'present' ? new Date().getFullYear() : parseInt(match[2]);
-    if (start < minYear) minYear = start;
-    if (end > maxYear) maxYear = end;
-  }
-
-  if (hasDates && maxYear >= minYear) {
-    const calcYears = maxYear - minYear;
-    if (calcYears > yearsExperience) yearsExperience = calcYears;
-  }
-
-  // 3. Extract Job Titles (Heuristic: Common titles)
+  // 3. Extract Job Titles
   const commonTitles = [
     "software engineer", "frontend developer", "backend developer", "full stack developer", 
     "product designer", "product manager", "devops engineer", "data scientist", "web developer"
@@ -60,10 +89,11 @@ export async function parseCV(text: string, originalFilename: string): Promise<P
   const foundTitles = commonTitles.filter(title => normalizedText.includes(title));
 
   return {
-    skills: [...new Set(foundSkills)], // Dedupe
-    yearsExperience: yearsExperience || 1, // Default to 1 if nothing found
+    skills: [...new Set(foundSkills)],
+    yearsExperience: yearsExperience || 1,
     jobTitles: [...new Set(foundTitles)],
-    techStack: [...new Set(foundSkills)], // Using skills as tech stack for simplicity
-    rawText: text.substring(0, 500) + "..." // Store snippet
+    techStack: [...new Set(foundSkills)],
+    rawText: text.substring(0, 500) + "...",
+    confidenceScore: Math.round(confidenceScore * 100) / 100
   };
 }

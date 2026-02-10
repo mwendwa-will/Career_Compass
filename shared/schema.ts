@@ -8,12 +8,15 @@ export const jobs = pgTable("jobs", {
   title: text("title").notNull(),
   company: text("company").notNull(),
   location: text("location").notNull(),
-  type: text("type").notNull(), // e.g., "Full-time", "Contract"
+  type: text("type").notNull(), 
   description: text("description").notNull(),
-  requirements: jsonb("requirements").$type<string[]>().notNull(), // Array of bullet points
-  skillsRequired: jsonb("skills_required").$type<string[]>().notNull(), // Keywords for matching
+  requirements: jsonb("requirements").$type<string[]>().notNull(), 
+  skillsRequired: jsonb("skills_required").$type<string[]>().notNull(), 
   salaryRange: text("salary_range"),
-  postedAt: text("posted_at").notNull(), // Simplified for display
+  postedAt: text("posted_at").notNull(), 
+  sourceUrl: text("source_url"),
+  isLive: boolean("is_live").default(false),
+  externalId: text("external_id"),
 });
 
 export const insertJobSchema = createInsertSchema(jobs).omit({ id: true });
@@ -21,13 +24,28 @@ export type Job = typeof jobs.$inferSelect;
 export type InsertJob = z.infer<typeof insertJobSchema>;
 
 // === ANALYSIS & MATCHING TYPES ===
-// These are not stored in the DB but are used for the API contract
+export const failureReasonSchema = z.object({
+  code: z.enum([
+    "UNSUPPORTED_FORMAT",
+    "IMAGE_ONLY",
+    "NON_STANDARD_LAYOUT",
+    "MISSING_SECTIONS",
+    "UNSUPPORTED_LANGUAGE",
+    "FILE_SIZE_INVALID",
+    "LOW_CONFIDENCE"
+  ]),
+  message: z.string(),
+  actionableStep: z.string(),
+});
+
 export const parsedCvSchema = z.object({
   skills: z.array(z.string()),
   yearsExperience: z.number(),
   jobTitles: z.array(z.string()),
   techStack: z.array(z.string()),
   rawText: z.string().optional(),
+  confidenceScore: z.number(), // 0-1
+  failure: failureReasonSchema.optional(),
 });
 
 export const matchResultSchema = z.object({

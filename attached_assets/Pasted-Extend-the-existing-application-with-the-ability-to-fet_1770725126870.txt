@@ -1,0 +1,64 @@
+Extend the existing application with the ability to fetch and analyze current job listings from online sources.
+
+LIVE JOB SEARCH REQUIREMENTS:
+- Search for real, currently available jobs based on:
+  - Job title
+  - Skills extracted from the CV
+  - Location (remote / hybrid / onsite)
+- Use public job sources (e.g. company career pages, job boards, or structured job feeds)
+- Normalize job data into a consistent internal format:
+  - Role title
+  - Required skills
+  - Optional skills
+  - Experience level
+  - Location
+  - Source URL
+  - Date posted
+- Clearly separate “job fetching” logic from “job matching” logic
+- If live fetching is unavailable, fall back to a realistic cached dataset and clearly label it
+
+CV ANALYSIS FAILURE HANDLING (CRITICAL):
+The system must never silently fail or return vague errors.
+
+When a CV cannot be analyzed, the app must:
+1. Detect the failure reason
+2. Classify it
+3. Explain it clearly to the user in human language
+4. Provide a concrete next step
+
+FAILURE CATEGORIES TO HANDLE:
+- File format not supported (e.g. scanned image PDF, corrupted file)
+- CV contains mostly images instead of selectable text
+- Non-standard layout (tables, multi-column, heavy graphics)
+- Missing key sections (experience, skills, education)
+- Unsupported language
+- File size too large or too small
+- Parsing confidence below acceptable threshold
+
+UX REQUIREMENTS FOR FAILURES:
+- Show a calm, professional explanation (not technical errors)
+- Avoid blaming the user
+- Provide actionable guidance, e.g.:
+  - “Try exporting your CV as a text-based PDF”
+  - “Use a single-column layout”
+  - “Add a dedicated Skills section”
+- Allow the user to:
+  - Re-upload
+  - Continue manually by entering skills
+
+ENGINEERING RULES:
+- CV parsing must return a confidence score
+- Any confidence score below threshold triggers a failure state
+- Failure reasons must be structured, not hard-coded strings
+- Job fetching logic must be replaceable (no tight coupling to one source)
+
+DESIGN & UX:
+- Failure states must be intentionally designed (not default alerts)
+- Error screens must match the overall visual design quality
+- Explanations should feel like a senior recruiter talking, not an AI system
+
+OUTPUT REQUIREMENTS:
+- Update the data models to support live jobs and failure states
+- Show example failure payloads
+- Show one example UI screen for a CV analysis failure
+- Keep code clean, minimal, and production-ready
