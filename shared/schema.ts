@@ -62,6 +62,7 @@ export const analysisResponseSchema = z.object({
   matches: z.array(matchResultSchema),
 });
 
-export type ParsedCV = z.infer<typeof parsedCvSchema>;
-export type MatchResult = z.infer<typeof matchResultSchema>;
+// === EXPLICIT API CONTRACT TYPES ===
+export type Note = typeof jobs.$inferSelect; // Example fallback if needed, but we use Job
 export type AnalysisResponse = z.infer<typeof analysisResponseSchema>;
+export type JobResponse = Job;

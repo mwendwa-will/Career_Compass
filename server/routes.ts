@@ -1,11 +1,16 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
+import type { Express, Request } from "express";
+import { type Server } from "http";
 import multer from "multer";
 import { storage } from "./storage";
 import { parseCV } from "./services/cv_parser";
 import { matchProfileToJobs } from "./services/matcher";
-import { api, errorSchemas } from "@shared/routes";
+import { fetchLiveJobs } from "./services/job_search";
+import { api } from "@shared/routes";
 import { z } from "zod";
+
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+}
 
 // Configure multer for memory storage
 const upload = multer({ 
@@ -23,10 +28,14 @@ export async function registerRoutes(
 
   // === JOBS API ===
   app.get(api.jobs.list.path, async (req, res) => {
-    const cachedJobs = await storage.getJobs();
-    // Also include a "Live" job in the initial list for demonstration
-    const liveJobs = await fetchLiveJobs({});
-    res.json([...liveJobs, ...cachedJobs]);
+    try {
+      const cachedJobs = await storage.getJobs();
+      // Also include a "Live" job in the initial list for demonstration
+      const liveJobs = await fetchLiveJobs({});
+      res.json([...liveJobs, ...cachedJobs]);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch jobs" });
+    }
   });
 
   app.get(api.jobs.get.path, async (req, res) => {
@@ -37,25 +46,26 @@ export async function registerRoutes(
     res.json(job);
   });
 
-  import { fetchLiveJobs } from "./services/job_search";
-
-// ... inside registerRoutes ...
-  app.post(api.analyze.upload.path, upload.single('file'), async (req, res) => {
+  // === ANALYZE API ===
+  app.post(api.analyze.upload.path, upload.single('file'), async (req: Request, res) => {
+    const mReq = req as MulterRequest;
     try {
-      if (!req.file) {
+      if (!mReq.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const fileBuffer = req.file.buffer;
-      const mimeType = req.file.mimetype;
-      const originalName = req.file.originalname;
+      const fileBuffer = mReq.file.buffer;
+      const mimeType = mReq.file.mimetype;
+      const originalName = mReq.file.originalname;
       
       let textContent = "";
 
       try {
         if (mimeType === 'application/pdf') {
-          const pdf = await import('pdf-parse');
-          const data = await pdf.default(fileBuffer);
+          const pdf = (await import('pdf-parse')) as any;
+          // Some versions use .default, some don't. Fallback logic:
+          const parseFunc = pdf.default || pdf;
+          const data = await parseFunc(fileBuffer);
           textContent = data.text;
         } else if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
           const mammoth = await import('mammoth');

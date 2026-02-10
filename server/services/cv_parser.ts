@@ -89,10 +89,10 @@ export async function parseCV(text: string, originalFilename: string): Promise<P
   const foundTitles = commonTitles.filter(title => normalizedText.includes(title));
 
   return {
-    skills: [...new Set(foundSkills)],
+    skills: Array.from(new Set(foundSkills)),
     yearsExperience: yearsExperience || 1,
-    jobTitles: [...new Set(foundTitles)],
-    techStack: [...new Set(foundSkills)],
+    jobTitles: Array.from(new Set(foundTitles)),
+    techStack: Array.from(new Set(foundSkills)),
     rawText: text.substring(0, 500) + "...",
     confidenceScore: Math.round(confidenceScore * 100) / 100
   };

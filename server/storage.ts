@@ -28,8 +28,9 @@ export class DatabaseStorage implements IStorage {
     const existing = await this.getJobs();
     if (existing.length > 0) return;
 
-    const realisticJobs: InsertJob[] = [
+    const realisticJobs: (InsertJob & { id: number })[] = [
       {
+        id: 1,
         title: "Senior Frontend Engineer",
         company: "Vercel",
         location: "Remote",
@@ -43,9 +44,11 @@ export class DatabaseStorage implements IStorage {
           "Strong eye for design details"
         ],
         skillsRequired: ["react", "typescript", "next.js", "css", "html", "figma"],
-        salaryRange: "$160k - $220k"
+        salaryRange: "$160k - $220k",
+        isLive: false
       },
       {
+        id: 2,
         title: "Full Stack Developer",
         company: "Linear",
         location: "San Francisco, CA",
@@ -59,9 +62,11 @@ export class DatabaseStorage implements IStorage {
           "Passion for developer tools"
         ],
         skillsRequired: ["node.js", "react", "postgresql", "graphql", "typescript"],
-        salaryRange: "$150k - $200k"
+        salaryRange: "$150k - $200k",
+        isLive: false
       },
       {
+        id: 3,
         title: "Product Designer",
         company: "Airbnb",
         location: "New York, NY",
@@ -75,9 +80,11 @@ export class DatabaseStorage implements IStorage {
           "Excellent communication skills"
         ],
         skillsRequired: ["figma", "ui design", "ux research", "prototyping", "design systems"],
-        salaryRange: "$140k - $190k"
+        salaryRange: "$140k - $190k",
+        isLive: false
       },
       {
+        id: 4,
         title: "Backend Engineer",
         company: "Stripe",
         location: "Dublin, Ireland",
@@ -91,12 +98,14 @@ export class DatabaseStorage implements IStorage {
           "Commitment to reliability and security"
         ],
         skillsRequired: ["java", "go", "ruby", "distributed systems", "postgresql", "api design"],
-        salaryRange: "$130k - $180k"
+        salaryRange: "$130k - $180k",
+        isLive: false
       }
     ];
 
     for (const job of realisticJobs) {
-      await this.createJob(job);
+      const { id, ...jobData } = job;
+      await this.createJob(jobData);
     }
   }
 }
