@@ -62,6 +62,7 @@ export default function Home() {
               onFileSelect={handleFileSelect}
               isAnalyzing={analyzeMutation.isPending}
               error={analyzeMutation.error ? analyzeMutation.error.message : null}
+              progress={analyzeMutation.progress}
             />
           </motion.div>
         </div>

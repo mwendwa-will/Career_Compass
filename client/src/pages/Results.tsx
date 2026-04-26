@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Navigation } from "@/components/Navigation";
 import { JobCard } from "@/components/JobCard";
+import { CVFailureState } from "@/components/CVFailureState";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, CheckCircle2, XCircle, ChevronRight, AlertTriangle, Download, ExternalLink } from "lucide-react";
 import type { AnalysisResponse } from "@shared/schema";
@@ -35,6 +36,23 @@ export default function Results() {
   }, [setLocation]);
 
   if (!data) return null;
+
+  // Handle CV parsing failure
+  if (data.parsedProfile.failure) {
+    return (
+      <>
+        <Navigation />
+        <CVFailureState
+          failure={data.parsedProfile.failure}
+          onRetry={() => setLocation("/")}
+          onManualEntry={() => {
+            // TODO: Implement manual skill entry flow
+            console.log("Manual entry not yet implemented");
+          }}
+        />
+      </>
+    );
+  }
 
   const selectedMatch = data.matches.find(m => m.jobId === selectedJobId);
   const sortedMatches = [...data.matches].sort((a, b) => b.matchPercentage - a.matchPercentage);
@@ -117,15 +135,37 @@ export default function Results() {
 
 // Wrapper to fetch job data for the list item
 import { useJob } from "@/hooks/use-jobs";
+import type { MatchResult } from "@shared/schema";
 
-function JobListItem({ match, isSelected, onClick }: { match: any, isSelected: boolean, onClick: () => void }) {
-  const { data: job } = useJob(match.jobId);
+function JobListItem({ match, isSelected, onClick }: { match: MatchResult, isSelected: boolean, onClick: () => void }) {
+  // Use embedded job info if available, otherwise fetch
+  const { data: fullJob } = useJob(match.jobId);
   
-  if (!job) return <div className="h-24 rounded-xl bg-muted/20 animate-pulse" />;
+  // Create a minimal job object from match data if available
+  const displayJob = match.job 
+    ? {
+        id: match.jobId,
+        title: match.job.title,
+        company: match.job.company,
+        location: match.job.location,
+        type: "Full-time", // Default, will be replaced by full data if fetched
+        description: "",
+        requirements: [],
+        skillsRequired: match.matchedSkills,
+        salaryRange: null,
+        postedAt: "Recently",
+        sourceUrl: null,
+        isLive: match.job.isLive,
+        sourceName: match.job.sourceName,
+        externalId: null
+      }
+    : fullJob;
+  
+  if (!displayJob) return <div className="h-24 rounded-xl bg-muted/20 animate-pulse" />;
   
   return (
     <JobCard 
-      job={job} 
+      job={displayJob as any} 
       match={match} 
       isSelected={isSelected} 
       onClick={onClick}

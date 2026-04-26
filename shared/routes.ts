@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { insertJobSchema, jobs, analysisResponseSchema } from './schema';
+import { jobResponseSchema, analysisResponseSchema } from './schema';
+
+export type { AnalysisResponse } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -20,14 +22,14 @@ export const api = {
       method: 'GET' as const,
       path: '/api/jobs' as const,
       responses: {
-        200: z.array(z.custom<typeof jobs.$inferSelect>()),
+        200: z.array(jobResponseSchema),
       },
     },
     get: {
       method: 'GET' as const,
       path: '/api/jobs/:id' as const,
       responses: {
-        200: z.custom<typeof jobs.$inferSelect>(),
+        200: jobResponseSchema,
         404: errorSchemas.notFound,
       },
     },
@@ -36,15 +38,29 @@ export const api = {
     upload: {
       method: 'POST' as const,
       path: '/api/analyze/upload' as const,
-      // Input is multipart/form-data, so we don't strictly validate body schema here in the route definition
-      // The backend will handle the file parsing
       responses: {
-        200: analysisResponseSchema,
+        202: z.object({ taskId: z.string() }),
         400: errorSchemas.validation,
         500: errorSchemas.internal,
       },
     }
-  }
+  },
+  tasks: {
+    get: {
+      method: 'GET' as const,
+      path: '/api/tasks/:id' as const,
+      responses: {
+        200: z.object({
+          taskId: z.string(),
+          status: z.enum(['pending', 'processing', 'completed', 'failed']),
+          progress: z.string().optional().nullable(),
+          result: analysisResponseSchema.optional().nullable(),
+          error: z.string().optional().nullable(),
+        }),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {

@@ -12,8 +12,6 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/results" component={Results} />
-      {/* Add Jobs list page if needed, for now Results handles listings */}
-      <Route path="/jobs" component={Home} /> 
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,27 +1,26 @@
-import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// === JOBS TABLE ===
-export const jobs = pgTable("jobs", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  company: text("company").notNull(),
-  location: text("location").notNull(),
-  type: text("type").notNull(), 
-  description: text("description").notNull(),
-  requirements: jsonb("requirements").$type<string[]>().notNull(), 
-  skillsRequired: jsonb("skills_required").$type<string[]>().notNull(), 
-  salaryRange: text("salary_range"),
-  postedAt: text("posted_at").notNull(), 
-  sourceUrl: text("source_url"),
-  isLive: boolean("is_live").default(false),
-  externalId: text("external_id"),
+// === JOB RESPONSE SCHEMA ===
+export const jobResponseSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  company: z.string(),
+  location: z.string(),
+  type: z.string(),
+  description: z.string(),
+  requirements: z.array(z.string()),
+  skillsRequired: z.array(z.string()),
+  optionalSkills: z.array(z.string()).nullable().optional(),
+  experienceLevel: z.string().nullable().optional(),
+  salaryRange: z.string().nullable().optional(),
+  postedAt: z.string(),
+  sourceUrl: z.string().nullable().optional(),
+  sourceName: z.string().nullable().optional(),
+  isLive: z.boolean().default(false),
+  externalId: z.string().nullable().optional(),
 });
 
-export const insertJobSchema = createInsertSchema(jobs).omit({ id: true });
-export type Job = typeof jobs.$inferSelect;
-export type InsertJob = z.infer<typeof insertJobSchema>;
+export type Job = z.infer<typeof jobResponseSchema>;
 
 // === ANALYSIS & MATCHING TYPES ===
 export const failureReasonSchema = z.object({
@@ -32,11 +31,17 @@ export const failureReasonSchema = z.object({
     "MISSING_SECTIONS",
     "UNSUPPORTED_LANGUAGE",
     "FILE_SIZE_INVALID",
-    "LOW_CONFIDENCE"
+    "LOW_CONFIDENCE",
+    "CORRUPTED_FILE",
+    "PASSWORD_PROTECTED"
   ]),
   message: z.string(),
   actionableStep: z.string(),
+  allowManualEntry: z.boolean().default(true),
+  suggestedFixes: z.array(z.string()).optional(),
 });
+
+export type FailureReason = z.infer<typeof failureReasonSchema>;
 
 export const parsedCvSchema = z.object({
   skills: z.array(z.string()),
@@ -45,24 +50,34 @@ export const parsedCvSchema = z.object({
   techStack: z.array(z.string()),
   rawText: z.string().optional(),
   confidenceScore: z.number(), // 0-1
-  failure: failureReasonSchema.optional(),
+  failure: failureReasonSchema.optional().nullable(),
+  location: z.string().optional().nullable(),
+  preferredJobType: z.string().optional().nullable(),
 });
+
+export type ParsedCV = z.infer<typeof parsedCvSchema>;
 
 export const matchResultSchema = z.object({
   jobId: z.number(),
   matchPercentage: z.number(), // 0-100
   missingSkills: z.array(z.string()),
   matchedSkills: z.array(z.string()),
-  strengthAlignment: z.array(z.string()), // "Strong React experience", etc.
-  improvements: z.array(z.string()), // "Consider adding TypeScript project", etc.
+  strengthAlignment: z.array(z.string()),
+  improvements: z.array(z.string()),
+  job: z.object({
+    title: z.string(),
+    company: z.string(),
+    location: z.string(),
+    isLive: z.boolean(),
+    sourceName: z.string().optional().nullable(),
+  }).optional(),
 });
+
+export type MatchResult = z.infer<typeof matchResultSchema>;
 
 export const analysisResponseSchema = z.object({
   parsedProfile: parsedCvSchema,
   matches: z.array(matchResultSchema),
 });
 
-// === EXPLICIT API CONTRACT TYPES ===
-export type Note = typeof jobs.$inferSelect; // Example fallback if needed, but we use Job
 export type AnalysisResponse = z.infer<typeof analysisResponseSchema>;
-export type JobResponse = Job;

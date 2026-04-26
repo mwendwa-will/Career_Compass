@@ -7,9 +7,10 @@ interface FileUploadProps {
   onFileSelect: (file: File) => void;
   isAnalyzing: boolean;
   error?: string | null;
+  progress?: string | null;
 }
 
-export function FileUpload({ onFileSelect, isAnalyzing, error }: FileUploadProps) {
+export function FileUpload({ onFileSelect, isAnalyzing, error, progress }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -76,7 +77,9 @@ export function FileUpload({ onFileSelect, isAnalyzing, error }: FileUploadProps
               </div>
               <div className="space-y-1">
                 <h3 className="text-lg font-semibold font-display">Analyzing Profile</h3>
-                <p className="text-muted-foreground text-sm">Extracting skills and experience from {fileName}...</p>
+                <p className="text-muted-foreground text-sm">
+                  {progress || `Extracting skills and experience from ${fileName ?? 'your CV'}...`}
+                </p>
               </div>
             </div>
           </motion.div>

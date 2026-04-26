@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { api, type AnalysisResponse } from "@shared/routes";
 
 // GET /api/jobs
@@ -29,26 +30,57 @@ export function useJob(id: number) {
 
 // POST /api/analyze/upload
 export function useAnalyzeCV() {
-  return useMutation({
+  const [progress, setProgress] = useState<string | null>(null);
+
+  const mutation = useMutation({
     mutationFn: async (file: File) => {
+      setProgress("Uploading...");
+
       const formData = new FormData();
       formData.append('file', file);
 
       const res = await fetch(api.analyze.upload.path, {
         method: 'POST',
         body: formData,
-        // Content-Type header is set automatically by browser with boundary for FormData
       });
 
-      if (!res.ok) {
-        if (res.status === 400) {
-          const error = api.analyze.upload.responses[400].parse(await res.json());
-          throw new Error(error.message);
-        }
+      if (res.status === 400) {
+        const error = api.analyze.upload.responses[400].parse(await res.json());
+        throw new Error(error.message);
+      }
+
+      if (res.status !== 202) {
         throw new Error("Failed to analyze CV");
       }
 
-      return api.analyze.upload.responses[200].parse(await res.json());
+      const { taskId } = api.analyze.upload.responses[202].parse(await res.json());
+      setProgress("Queued for analysis...");
+
+      const poll = async (): Promise<AnalysisResponse> => {
+        while (true) {
+          const taskRes = await fetch(api.tasks.get.path.replace(':id', taskId));
+          if (!taskRes.ok) {
+            throw new Error("Failed to check task status");
+          }
+          const task = api.tasks.get.responses[200].parse(await taskRes.json());
+          if (task.progress) {
+            setProgress(task.progress);
+          }
+          if (task.status === "completed" && task.result) {
+            setProgress("Completed");
+            return task.result;
+          }
+          if (task.status === "failed") {
+            throw new Error(task.error || "Analysis failed");
+          }
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      };
+
+      return poll();
     },
+    onSettled: () => setProgress(null),
   });
+
+  return { ...mutation, progress };
 }
