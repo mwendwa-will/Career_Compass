@@ -1,6 +1,40 @@
 node_modules
 dist
 .DS_Store
-server/public
 vite.config.ts.*
 *.tar.gz
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Replit backup
+.replit.backup
+
+# Logs
+*.log
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Backend data (SQLite) and local virtualenv
+backend/data/
+backend/db/
+backend/venv/
+
+# VS Code / copilot local state
+.local/
