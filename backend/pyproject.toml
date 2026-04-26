@@ -1,0 +1,18 @@
+[tool.ruff]
+line-length = 100
+extend-select = ["I"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["services", "routers", "schemas", "models", "database", "config", "seed", "tasks"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+warn_unused_ignores = true
+strict = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "-q"

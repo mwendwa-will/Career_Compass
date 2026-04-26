@@ -1,0 +1,24 @@
+server:
+  port: 8080
+  bind_address: 0.0.0.0
+  secret_key: "please-change-me"
+  method: GET
+
+ui:
+  themes:
+    - simple
+
+engines:
+  - name: google
+    engine: google
+  - name: bing
+    engine: bing
+  - name: duckduckgo
+    engine: duckduckgo
+
+search:
+  safe_search: 0
+  autocomplete: ""
+
+outgoing:
+  request_timeout: 5.0
