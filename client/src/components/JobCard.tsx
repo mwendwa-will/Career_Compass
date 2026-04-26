@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, XCircle, MapPin, Building2, Briefcase } from "lucide-react";
+import { ArrowUpRight, Building2, MapPin, Sparkles, Zap } from "lucide-react";
 import type { Job, MatchResult } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
@@ -10,103 +10,144 @@ interface JobCardProps {
   onClick: () => void;
 }
 
+function scoreTone(score: number) {
+  if (score >= 80) return "success";
+  if (score >= 50) return "warning";
+  return "danger";
+}
+
+const toneClasses = {
+  success: {
+    text: "text-success",
+    ring: "stroke-success",
+    chip: "bg-success/10 text-success",
+    track: "stroke-success/15",
+  },
+  warning: {
+    text: "text-warning",
+    ring: "stroke-warning",
+    chip: "bg-warning/10 text-warning",
+    track: "stroke-warning/15",
+  },
+  danger: {
+    text: "text-danger",
+    ring: "stroke-danger",
+    chip: "bg-danger/10 text-danger",
+    track: "stroke-danger/15",
+  },
+} as const;
+
 export function JobCard({ job, match, isSelected, onClick }: JobCardProps) {
-  const score = match?.matchPercentage || 0;
-  
-  // Determine color based on score
-  let scoreColor = "text-muted-foreground";
-  let ringColor = "ring-muted";
-  
-  if (score >= 80) {
-    scoreColor = "text-emerald-600";
-    ringColor = "ring-emerald-500";
-  } else if (score >= 50) {
-    scoreColor = "text-amber-600";
-    ringColor = "ring-amber-500";
-  } else if (match) {
-    scoreColor = "text-rose-600";
-    ringColor = "ring-rose-500";
-  }
+  const score = match?.matchPercentage ?? 0;
+  const tone = scoreTone(score);
+  const t = toneClasses[tone];
+
+  // SVG ring math (r=22, c=2πr ≈ 138.23)
+  const C = 138.23;
+  const offset = C - (C * score) / 100;
 
   return (
-    <motion.div
+    <motion.button
+      type="button"
       layout
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       onClick={onClick}
       className={cn(
-        "group relative p-6 bg-card rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden",
-        isSelected 
-          ? "border-primary ring-1 ring-primary shadow-lg scale-[1.02]" 
-          : "border-border hover:border-primary/30 hover:shadow-md"
+        "group relative w-full overflow-hidden rounded-2xl bg-card p-5 text-left transition-all duration-300",
+        isSelected
+          ? "shadow-lift ring-2 ring-primary"
+          : "shadow-soft ring-1 ring-inset ring-border/60 hover:shadow-lift hover:ring-primary/30"
       )}
     >
-      <div className="flex justify-between items-start gap-4">
-        <div className="flex-1 space-y-3">
-          <div>
-            <h3 className="font-display font-semibold text-lg text-foreground leading-tight group-hover:text-primary transition-colors">
-              {job.title}
-            </h3>
-            <p className="text-sm font-medium text-muted-foreground mt-1 flex items-center gap-2">
-              <Building2 className="w-3.5 h-3.5" />
-              {job.company}
-            </p>
-          </div>
-          
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50">
-              <MapPin className="w-3 h-3" />
-              {job.location}
-            </span>
-            <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50">
-              <Briefcase className="w-3 h-3" />
-              {job.type}
-            </span>
-          </div>
-        </div>
+      {isSelected && (
+        <span
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-1 rounded-t-2xl"
+          style={{
+            backgroundImage:
+              "linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary-soft)))",
+          }}
+        />
+      )}
 
+      <div className="flex items-start gap-4">
+        {/* Match ring */}
         {match && (
-          <div className="flex flex-col items-center">
-            <div className={cn(
-              "relative flex items-center justify-center w-14 h-14 rounded-full bg-background border-4 text-sm font-bold shadow-sm transition-colors",
-              scoreColor,
-              match.matchPercentage >= 80 ? "border-emerald-100" : match.matchPercentage >= 50 ? "border-amber-100" : "border-rose-100"
-            )}>
-              {match.matchPercentage}%
-              
-              {/* Animated Ring for High Match */}
-              {match.matchPercentage >= 80 && (
-                <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                  <circle
-                    className="text-emerald-500"
-                    strokeWidth="4"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r="46"
-                    cx="50"
-                    cy="50"
-                    strokeDasharray="289.02652413026095"
-                    strokeDashoffset="0"
-                    strokeLinecap="round"
-                    style={{ 
-                      strokeDashoffset: 289 - (289 * match.matchPercentage) / 100,
-                      transition: "stroke-dashoffset 1s ease-out" 
-                    }}
-                  />
-                </svg>
-              )}
+          <div className="relative flex-shrink-0">
+            <svg width="56" height="56" viewBox="0 0 50 50" className="-rotate-90">
+              <circle
+                cx="25"
+                cy="25"
+                r="22"
+                fill="none"
+                strokeWidth="4"
+                className={t.track}
+              />
+              <circle
+                cx="25"
+                cy="25"
+                r="22"
+                fill="none"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={C}
+                strokeDashoffset={offset}
+                className={cn(t.ring, "transition-[stroke-dashoffset] duration-700")}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className={cn("font-display text-sm font-bold", t.text)}>
+                {score}
+              </span>
             </div>
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mt-2">
-              Match
-            </span>
           </div>
         )}
-      </div>
 
-      <div className="mt-5 pt-4 border-t border-border/50 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <span className="text-xs text-muted-foreground font-medium">View Analysis</span>
-        <ArrowRight className="w-4 h-4 text-primary" />
+        {/* Title block */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-2">
+            <h3 className="flex-1 truncate font-display text-base font-bold leading-tight text-foreground group-hover:text-primary">
+              {job.title}
+            </h3>
+            <ArrowUpRight className="mt-0.5 h-4 w-4 flex-shrink-0 -translate-x-1 translate-y-1 text-muted-foreground opacity-0 transition group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:text-primary" />
+          </div>
+
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Building2 className="h-3 w-3" />
+            <span className="truncate">{job.company}</span>
+            <span aria-hidden className="text-border">·</span>
+            <MapPin className="h-3 w-3" />
+            <span className="truncate">{job.location}</span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {job.isLive && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary-tint px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />
+                  <span className="relative h-1.5 w-1.5 rounded-full bg-primary" />
+                </span>
+                Live · {job.sourceName ?? "SearXNG"}
+              </span>
+            )}
+            <span className="rounded-full bg-surface-mid px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {job.type}
+            </span>
+            {match && match.matchedSkills.length > 0 && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+                  t.chip
+                )}
+              >
+                {score >= 80 ? <Sparkles className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+                {match.matchedSkills.length} skill{match.matchedSkills.length === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
-    </motion.div>
+    </motion.button>
   );
 }

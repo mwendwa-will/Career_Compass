@@ -1,69 +1,219 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+/* Career Compass — "Architectural Humanist" inspired design tokens.
+ *
+ * Editorial, premium, indigo. No 1px hard borders for sectioning;
+ * structural separation comes from background tonal shifts and
+ * generous whitespace. Plus Jakarta Sans throughout.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Minimal Editorial Palette */
-  /* Base neutral - slightly warm off-white for paper feel */
-  --background: 30 14% 97%;
-  /* Deep charcoal for text - softer than pure black */
-  --foreground: 220 10% 12%;
-  
-  /* Primary Accent - A refined indigo/slate */
-  --primary: 224 38% 30%;
-  --primary-foreground: 0 0% 100%;
-  
-  /* Secondary/Muted */
-  --muted: 220 10% 92%;
-  --muted-foreground: 220 10% 45%;
-  
-  /* Status Colors */
-  --success: 142 36% 45%;
-  --warning: 32 95% 44%;
-  
-  /* Border */
-  --border: 220 10% 88%;
-  
-  /* Card/Surface */
-  --card: 0 0% 100%;
-  --card-foreground: 220 10% 12%;
+  /* Surfaces */
+  --background: 250 100% 99%;
+  --foreground: 224 41% 13%;
+  --surface: 250 100% 99%;
+  --surface-low: 234 100% 97%;
+  --surface-mid: 232 100% 95%;
+  --surface-high: 230 100% 93%;
+  --surface-highest: 230 78% 92%;
 
-  /* Fonts */
-  --font-sans: 'Inter', sans-serif;
-  --font-display: 'Playfair Display', serif;
+  --card: 0 0% 100%;
+  --card-foreground: 224 41% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 41% 13%;
+
+  --muted: 234 100% 97%;
+  --muted-foreground: 240 11% 40%;
+
+  /* Brand — indigo gradient pair */
+  --primary: 245 70% 47%;
+  --primary-foreground: 0 0% 100%;
+  --primary-soft: 245 78% 59%;
+  --primary-tint: 247 100% 94%;
+
+  --secondary: 234 100% 95%;
+  --secondary-foreground: 224 41% 13%;
+  --accent: 247 100% 94%;
+  --accent-foreground: 245 70% 47%;
+
+  /* Status */
+  --success: 159 64% 38%;
+  --success-foreground: 0 0% 100%;
+  --warning: 32 95% 44%;
+  --warning-foreground: 0 0% 100%;
+  --danger: 350 89% 50%;
+  --danger-foreground: 0 0% 100%;
+
+  --destructive: 350 89% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Outlines — never use at full opacity */
+  --border: 234 22% 88%;
+  --input: 234 22% 88%;
+  --ring: 245 78% 59%;
+
+  /* Charts (shadcn parity) */
+  --chart-1: 245 70% 47%;
+  --chart-2: 159 64% 38%;
+  --chart-3: 32 95% 44%;
+  --chart-4: 245 78% 59%;
+  --chart-5: 240 11% 40%;
+
+  /* Sidebar (shadcn parity) */
+  --sidebar: 234 100% 97%;
+  --sidebar-foreground: 224 41% 13%;
+  --sidebar-primary: 245 70% 47%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 247 100% 94%;
+  --sidebar-accent-foreground: 245 70% 47%;
+  --sidebar-border: 234 22% 88%;
+  --sidebar-ring: 245 78% 59%;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Elevation — diffused, tinted by on-surface, never grey */
+  --shadow-soft: 0 1px 2px hsl(224 41% 13% / 0.04), 0 4px 12px hsl(224 41% 13% / 0.04);
+  --shadow-lift: 0 4px 8px hsl(224 41% 13% / 0.04), 0 16px 32px hsl(224 41% 13% / 0.06);
+  --shadow-float: 0 12px 24px hsl(224 41% 13% / 0.06), 0 32px 64px hsl(224 41% 13% / 0.08);
+  --shadow-glow: 0 8px 24px hsl(245 78% 59% / 0.32);
+}
+
+.dark {
+  --background: 232 35% 8%;
+  --foreground: 230 30% 95%;
+  --surface: 232 35% 8%;
+  --surface-low: 232 30% 11%;
+  --surface-mid: 232 28% 14%;
+  --surface-high: 232 25% 18%;
+  --surface-highest: 232 22% 22%;
+  --card: 232 30% 11%;
+  --card-foreground: 230 30% 95%;
+  --popover: 232 30% 11%;
+  --popover-foreground: 230 30% 95%;
+  --muted: 232 28% 14%;
+  --muted-foreground: 230 16% 65%;
+  --primary: 247 90% 70%;
+  --primary-foreground: 232 35% 8%;
+  --primary-soft: 245 78% 65%;
+  --primary-tint: 245 50% 18%;
+  --secondary: 232 28% 14%;
+  --secondary-foreground: 230 30% 95%;
+  --accent: 245 50% 18%;
+  --accent-foreground: 247 90% 80%;
+  --border: 232 22% 22%;
+  --input: 232 22% 22%;
+  --ring: 247 90% 70%;
+  --sidebar: 232 30% 11%;
+  --sidebar-foreground: 230 30% 95%;
+  --sidebar-primary: 247 90% 70%;
+  --sidebar-primary-foreground: 232 35% 8%;
+  --sidebar-accent: 245 50% 18%;
+  --sidebar-accent-foreground: 247 90% 80%;
+  --sidebar-border: 232 22% 22%;
+  --sidebar-ring: 247 90% 70%;
 }
 
 @layer base {
-  body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/10 selection:text-primary;
-    font-family: var(--font-sans);
+  * {
+    @apply border-border;
   }
-
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+    color: hsl(var(--foreground));
+  }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    @apply font-semibold tracking-tight;
+    @apply font-bold tracking-tight;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  /* Brand CTA — indigo gradient */
+  .btn-gradient {
+    background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-soft)) 100%);
+    color: hsl(var(--primary-foreground));
+    box-shadow: var(--shadow-glow);
+    transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+  }
+  .btn-gradient:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+    box-shadow: 0 12px 28px hsl(245 78% 59% / 0.4);
+  }
+  .btn-gradient:active {
+    transform: translateY(0);
+  }
+
+  /* Glassy floating element */
+  .glass {
+    background: hsl(var(--background) / 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-primary;
+  }
+
+  .surface-card {
+    @apply bg-card rounded-2xl;
+    box-shadow: var(--shadow-soft);
+  }
+  .surface-card-lift {
+    @apply bg-card rounded-2xl;
+    box-shadow: var(--shadow-lift);
   }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  .bg-surface { background-color: hsl(var(--surface)); }
+  .bg-surface-low { background-color: hsl(var(--surface-low)); }
+  .bg-surface-mid { background-color: hsl(var(--surface-mid)); }
+  .bg-surface-high { background-color: hsl(var(--surface-high)); }
+  .bg-surface-highest { background-color: hsl(var(--surface-highest)); }
+
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-lift { box-shadow: var(--shadow-lift); }
+  .shadow-float { box-shadow: var(--shadow-float); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+
+  .bg-hero-aura {
+    background-image:
+      radial-gradient(60% 50% at 50% 0%, hsl(var(--primary) / 0.10), transparent 70%),
+      radial-gradient(40% 35% at 85% 30%, hsl(var(--primary-soft) / 0.08), transparent 70%);
   }
 }
 
-/* Custom Scrollbar for a cleaner look */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 4px;
+  background: hsl(var(--muted-foreground) / 0.18);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--primary) / 0.35);
 }
+
+.scrollbar-thin::-webkit-scrollbar { width: 6px; }

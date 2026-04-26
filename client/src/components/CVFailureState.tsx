@@ -1,7 +1,15 @@
 import { motion } from "framer-motion";
-import { AlertCircle, FileQuestion, RefreshCw, Edit3, ChevronRight } from "lucide-react";
+import {
+  AlertTriangle,
+  FileQuestion,
+  RefreshCw,
+  Edit3,
+  ChevronRight,
+  ShieldAlert,
+  Image as ImageIcon,
+  FileX,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import type { FailureReason } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
@@ -11,144 +19,128 @@ interface CVFailureStateProps {
   onManualEntry?: () => void;
 }
 
-const failureIcons = {
-  UNSUPPORTED_FORMAT: FileQuestion,
-  IMAGE_ONLY: FileQuestion,
-  NON_STANDARD_LAYOUT: FileQuestion,
-  MISSING_SECTIONS: AlertCircle,
-  UNSUPPORTED_LANGUAGE: AlertCircle,
-  FILE_SIZE_INVALID: AlertCircle,
-  LOW_CONFIDENCE: AlertCircle,
-  CORRUPTED_FILE: FileQuestion,
-  PASSWORD_PROTECTED: FileQuestion,
-};
-
-const failureColors = {
-  UNSUPPORTED_FORMAT: "text-orange-500",
-  IMAGE_ONLY: "text-orange-500",
-  NON_STANDARD_LAYOUT: "text-blue-500",
-  MISSING_SECTIONS: "text-yellow-500",
-  UNSUPPORTED_LANGUAGE: "text-purple-500",
-  FILE_SIZE_INVALID: "text-red-500",
-  LOW_CONFIDENCE: "text-yellow-500",
-  CORRUPTED_FILE: "text-red-500",
-  PASSWORD_PROTECTED: "text-orange-500",
+const failureMeta: Record<
+  FailureReason["code"],
+  { Icon: React.ComponentType<{ className?: string }>; tone: "warning" | "danger" }
+> = {
+  UNSUPPORTED_FORMAT: { Icon: FileQuestion, tone: "warning" },
+  IMAGE_ONLY: { Icon: ImageIcon, tone: "warning" },
+  NON_STANDARD_LAYOUT: { Icon: FileQuestion, tone: "warning" },
+  MISSING_SECTIONS: { Icon: AlertTriangle, tone: "warning" },
+  UNSUPPORTED_LANGUAGE: { Icon: AlertTriangle, tone: "warning" },
+  FILE_SIZE_INVALID: { Icon: FileX, tone: "danger" },
+  LOW_CONFIDENCE: { Icon: AlertTriangle, tone: "warning" },
+  CORRUPTED_FILE: { Icon: FileX, tone: "danger" },
+  PASSWORD_PROTECTED: { Icon: ShieldAlert, tone: "warning" },
 };
 
 export function CVFailureState({ failure, onRetry, onManualEntry }: CVFailureStateProps) {
-  const Icon = failureIcons[failure.code] || AlertCircle;
-  const iconColor = failureColors[failure.code] || "text-muted-foreground";
+  const meta = failureMeta[failure.code] ?? failureMeta.MISSING_SECTIONS;
+  const Icon = meta.Icon;
+  const isDanger = meta.tone === "danger";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <div className="flex-1 flex items-center justify-center p-6">
+    <div className="relative isolate min-h-[calc(100vh-64px)] bg-surface-low">
+      <div aria-hidden className="absolute inset-0 -z-10 bg-hero-aura opacity-50" />
+
+      <div className="container max-w-3xl px-6 py-16 md:py-24">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="w-full max-w-2xl"
         >
-          {/* Icon Header */}
-          <div className="flex justify-center  mb-8">
-            <div className={cn(
-              "h-20 w-20 rounded-full flex items-center justify-center",
-              "bg-muted/50 backdrop-blur-sm ring-1 ring-border"
-            )}>
-              <Icon className={cn("h-10 w-10", iconColor)} />
+          <div
+            className={cn(
+              "mb-8 inline-flex items-center gap-2 rounded-full px-3 py-1.5",
+              isDanger ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"
+            )}
+          >
+            <span className="eyebrow text-[10px] tracking-[0.18em] text-current">
+              CV needs attention
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-6 md:flex-row md:items-start">
+            <div
+              className={cn(
+                "flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl",
+                isDanger ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"
+              )}
+            >
+              <Icon className="h-8 w-8" />
+            </div>
+
+            <div className="flex-1">
+              <h1 className="font-display text-3xl font-bold leading-tight md:text-4xl">
+                We couldn't fully read your CV.
+              </h1>
+              <p className="mt-3 text-lg leading-relaxed text-muted-foreground text-balance">
+                {failure.message}
+              </p>
             </div>
           </div>
 
-          {/* Main Content */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-              We need your help
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-lg mx-auto">
-              {failure.message}
-            </p>
-          </div>
-
-          {/* Actionable Step Card */}
-          <Card className="mb-8 border-2">
-            <CardContent className="p-6">
-              <div className="flex gap-4">
-                <div className="flex-shrink-0">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <ChevronRight className="h-4 w-4 text-primary" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-2">
-                    What to do next
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {failure.actionableStep}
-                  </p>
-                </div>
+          <div className="mt-10 surface-card-lift overflow-hidden">
+            <div className="flex items-start gap-4 p-6">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary-tint text-primary">
+                <ChevronRight className="h-5 w-5" />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Suggested Fixes */}
-          {failure.suggestedFixes && failure.suggestedFixes.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                Quick Fixes
-              </h3>
-              <div className="grid gap-3">
-                {failure.suggestedFixes.map((fix, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className={cn(
-                      "flex items-start gap-3 p-4 rounded-lg",
-                      "bg-muted/30 border border-border/50",
-                      "hover:bg-muted/50 transition-colors"
-                    )}
-                  >
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
-                        <span className="text-xs font-bold text-primary">
-                          {index + 1}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-sm text-foreground">{fix}</p>
-                  </motion.div>
-                ))}
+              <div className="flex-1">
+                <h3 className="eyebrow text-primary">What to try next</h3>
+                <p className="mt-2 leading-relaxed text-foreground/90">
+                  {failure.actionableStep}
+                </p>
               </div>
             </div>
-          )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {failure.suggestedFixes && failure.suggestedFixes.length > 0 && (
+              <div className="border-t border-border/40 bg-surface-low p-6">
+                <h4 className="eyebrow text-muted-foreground">Quick fixes</h4>
+                <ul className="mt-4 grid gap-3 md:grid-cols-2">
+                  {failure.suggestedFixes.map((fix, i) => (
+                    <motion.li
+                      key={i}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.25, delay: i * 0.05 }}
+                      className="flex items-start gap-3 rounded-xl bg-card p-3 shadow-soft"
+                    >
+                      <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
+                        {i + 1}
+                      </span>
+                      <span className="text-sm leading-relaxed text-foreground/90">{fix}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button
               size="lg"
               onClick={onRetry}
-              className="gap-2"
+              className="btn-gradient h-12 gap-2 rounded-xl px-6 text-sm font-semibold border-0"
             >
               <RefreshCw className="h-4 w-4" />
-              Try Another File
+              Try another file
             </Button>
-            
             {failure.allowManualEntry && onManualEntry && (
               <Button
                 size="lg"
                 variant="outline"
                 onClick={onManualEntry}
-                className="gap-2"
+                className="h-12 gap-2 rounded-xl border-border/60 bg-card px-6 text-sm font-semibold hover:bg-surface-mid"
               >
                 <Edit3 className="h-4 w-4" />
-                Enter Skills Manually
+                Enter skills manually
               </Button>
             )}
           </div>
 
-          {/* Support Text */}
-          <p className="text-center text-xs text-muted-foreground mt-8">
-            Having trouble? Most CVs work best as single-column, text-based PDFs exported from Word or Google Docs.
+          <p className="mt-10 text-xs text-muted-foreground">
+            CVs work best as single-column, text-based PDFs exported from Word or Google Docs.
+            Image-only scans, encrypted files, and complex multi-column layouts trip up parsers.
           </p>
         </motion.div>
       </div>

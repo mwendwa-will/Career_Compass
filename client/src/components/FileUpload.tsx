@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileText, Loader2, AlertTriangle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -9,9 +9,21 @@ interface FileUploadProps {
   isAnalyzing: boolean;
   error?: string | null;
   progress?: string | null;
+  onCancel?: () => void;
 }
 
-export function FileUpload({ onFileSelect, isAnalyzing, error, progress }: FileUploadProps) {
+const ACCEPTED_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+
+export function FileUpload({
+  onFileSelect,
+  isAnalyzing,
+  error,
+  progress,
+  onCancel,
+}: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -20,39 +32,37 @@ export function FileUpload({ onFileSelect, isAnalyzing, error, progress }: FileU
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
+    else if (e.type === "dragleave") setDragActive(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      handleFile(file);
-    }
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0]);
-    }
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
   };
 
   const handleFile = (file: File) => {
-    // Basic validation
-    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!validTypes.includes(file.type)) {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
       toast({
         variant: "destructive",
         title: "Unsupported file",
-        description: "Please upload a PDF or DOCX file.",
+        description: "Upload a PDF or DOCX file (max 5 MB).",
+      });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: "Maximum file size is 5 MB.",
       });
       return;
     }
@@ -60,83 +70,142 @@ export function FileUpload({ onFileSelect, isAnalyzing, error, progress }: FileU
     onFileSelect(file);
   };
 
-  const triggerUpload = () => {
-    inputRef.current?.click();
-  };
+  const triggerUpload = () => inputRef.current?.click();
 
   return (
     <div className="w-full max-w-xl mx-auto">
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         {isAnalyzing ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
+          <motion.div
+            key="analyzing"
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="bg-card border border-border rounded-2xl p-10 text-center shadow-sm"
+            exit={{ opacity: 0, y: -8 }}
+            className="surface-card-lift overflow-hidden p-8 text-left"
           >
-            <div className="flex flex-col items-center gap-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
-                <div className="relative bg-background p-4 rounded-full border border-primary/20">
-                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <div className="flex items-start gap-4">
+              <div className="relative flex-shrink-0">
+                <div
+                  aria-hidden
+                  className="absolute inset-0 rounded-xl bg-primary/30 blur-md animate-pulse"
+                />
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-primary-tint">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-lg font-semibold font-display">Analyzing Profile</h3>
-                <p className="text-muted-foreground text-sm">
-                  {progress || `Extracting skills and experience from ${fileName ?? 'your CV'}...`}
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display text-lg font-bold leading-tight">
+                  Reading your CV
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground truncate">
+                  {fileName ?? "your file"}
                 </p>
+                <div className="mt-4 flex items-center gap-2 text-xs font-medium text-primary">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />
+                    <span className="relative rounded-full bg-primary h-2 w-2" />
+                  </span>
+                  {progress ?? "Working…"}
+                </div>
               </div>
+              {onCancel && (
+                <button
+                  onClick={onCancel}
+                  aria-label="Cancel"
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-surface-mid hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Indeterminate progress bar */}
+            <div className="mt-6 h-1 overflow-hidden rounded-full bg-surface-mid">
+              <div
+                className="h-full w-1/3 rounded-full"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary-soft)))",
+                  animation: "shimmer 2s linear infinite",
+                  backgroundSize: "200% 100%",
+                }}
+              />
             </div>
           </motion.div>
         ) : (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            key="dropzone"
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              "relative group cursor-pointer bg-card rounded-2xl border-2 border-dashed transition-all duration-300 ease-out p-10 text-center",
-              dragActive ? "border-primary bg-primary/5 scale-[1.02]" : "border-border hover:border-primary/50 hover:bg-background/50",
-              error ? "border-destructive/50 bg-destructive/5" : ""
-            )}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            onClick={triggerUpload}
+            exit={{ opacity: 0, y: -8 }}
           >
-            <input
-              ref={inputRef}
-              type="file"
-              className="hidden"
-              accept=".pdf,.docx"
-              onChange={handleChange}
-            />
-            
-            <div className="flex flex-col items-center gap-4">
-              <div className={cn(
-                "p-4 rounded-full transition-colors duration-300",
-                error ? "bg-destructive/10 text-destructive" : "bg-primary/5 text-primary group-hover:bg-primary/10"
-              )}>
-                {error ? <AlertCircle className="w-8 h-8" /> : <Upload className="w-8 h-8" />}
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-xl font-display font-medium text-foreground">
-                  {error ? "Analysis Failed" : "Drop your CV here"}
-                </h3>
-                <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                  {error || "Upload your resume in PDF or DOCX format. We'll match your skills to open roles."}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={triggerUpload}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && triggerUpload()}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              className={cn(
+                "group relative cursor-pointer overflow-hidden rounded-2xl p-10 transition-all duration-300",
+                "bg-card shadow-soft",
+                "ring-1 ring-inset ring-border/60",
+                "hover:shadow-lift hover:ring-primary/30",
+                dragActive && "ring-2 ring-primary bg-primary-tint",
+                error && "ring-destructive/40 bg-destructive/5"
+              )}
+            >
+              <input
+                ref={inputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.docx"
+                onChange={handleChange}
+              />
+
+              <div className="flex flex-col items-center gap-5 text-center">
+                <div
+                  className={cn(
+                    "relative flex h-16 w-16 items-center justify-center rounded-2xl transition-colors",
+                    error
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-primary-tint text-primary group-hover:scale-105"
+                  )}
+                >
+                  {error ? (
+                    <AlertTriangle className="h-7 w-7" />
+                  ) : (
+                    <Upload className="h-7 w-7" strokeWidth={2} />
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="font-display text-xl font-bold">
+                    {error ? "Something went wrong" : "Drop your CV here"}
+                  </h3>
+                  <p className="mx-auto max-w-sm text-sm text-muted-foreground">
+                    {error ?? "PDF or DOCX, up to 5 MB. We'll extract your skills and match you to open roles."}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    triggerUpload();
+                  }}
+                  className="btn-gradient mt-1 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold"
+                >
+                  <FileText className="h-4 w-4" />
+                  {error ? "Try another file" : "Choose a file"}
+                </button>
+
+                <p className="text-xs text-muted-foreground/80">
+                  Or drag and drop. Your file never leaves the analysis pipeline.
                 </p>
               </div>
-
-              {!error && (
-                <button 
-                  className="mt-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-primary-foreground transition-all"
-                  onClick={(e) => { e.stopPropagation(); triggerUpload(); }}
-                >
-                  Browse Files
-                </button>
-              )}
             </div>
           </motion.div>
         )}
