@@ -105,26 +105,44 @@
   --popover: 232 30% 11%;
   --popover-foreground: 230 30% 95%;
   --muted: 232 28% 14%;
-  --muted-foreground: 230 16% 65%;
-  --primary: 247 90% 70%;
+  --muted-foreground: 230 16% 72%;
+  --primary: 247 95% 78%;
   --primary-foreground: 232 35% 8%;
-  --primary-soft: 245 78% 65%;
-  --primary-tint: 245 50% 18%;
+  --primary-soft: 245 85% 74%;
+  --primary-tint: 245 50% 20%;
+  --primary-fixed: 245 50% 24%;
+  --on-primary-fixed: 245 100% 92%;
+  --tertiary: 28 95% 70%;
+  --tertiary-container: 245 50% 18%;
+  --tertiary-foreground: 232 35% 8%;
   --secondary: 232 28% 14%;
   --secondary-foreground: 230 30% 95%;
-  --accent: 245 50% 18%;
+  --accent: 245 50% 20%;
   --accent-foreground: 247 90% 80%;
-  --border: 232 22% 22%;
-  --input: 232 22% 22%;
-  --ring: 247 90% 70%;
+  --border: 232 22% 24%;
+  --outline-variant: 232 18% 32%;
+  --input: 232 22% 24%;
+  --ring: 247 90% 72%;
+  /* Tone tokens — slightly lighter to keep AA on dark surfaces */
+  --success: 159 70% 48%;
+  --success-foreground: 232 35% 8%;
+  --warning: 28 95% 60%;
+  --warning-foreground: 232 35% 8%;
+  --danger: 350 85% 65%;
+  --danger-foreground: 232 35% 8%;
   --sidebar: 232 30% 11%;
   --sidebar-foreground: 230 30% 95%;
-  --sidebar-primary: 247 90% 70%;
+  --sidebar-primary: 247 90% 72%;
   --sidebar-primary-foreground: 232 35% 8%;
-  --sidebar-accent: 245 50% 18%;
+  --sidebar-accent: 245 50% 20%;
   --sidebar-accent-foreground: 247 90% 80%;
-  --sidebar-border: 232 22% 22%;
-  --sidebar-ring: 247 90% 70%;
+  --sidebar-border: 232 22% 24%;
+  --sidebar-ring: 247 90% 72%;
+  /* Elevation darker, deeper diffusion against near-black surface */
+  --shadow-soft: 0 1px 2px hsl(0 0% 0% / 0.5), 0 4px 12px hsl(0 0% 0% / 0.4);
+  --shadow-lift: 0 4px 8px hsl(0 0% 0% / 0.5), 0 16px 32px hsl(0 0% 0% / 0.55);
+  --shadow-float: 0 12px 24px hsl(0 0% 0% / 0.55), 0 32px 64px hsl(0 0% 0% / 0.6);
+  --shadow-glow: 0 8px 28px hsl(247 90% 72% / 0.36);
 }
 
 @layer base {
@@ -216,7 +234,7 @@
   .bg-surface-highest { background-color: hsl(var(--surface-highest)); }
 
   /* Stitch alias utilities */
-  .bg-surface-container-lowest { background-color: hsl(0 0% 100%); }
+  .bg-surface-container-lowest { background-color: hsl(var(--card)); }
   .bg-surface-container-low { background-color: hsl(var(--surface-low)); }
   .bg-surface-container { background-color: hsl(var(--surface-mid)); }
   .bg-primary-fixed { background-color: hsl(var(--primary-fixed)); }

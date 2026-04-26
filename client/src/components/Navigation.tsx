@@ -1,10 +1,31 @@
 import { Link, useLocation } from "wouter";
-import { Compass } from "lucide-react";
+import { Compass, Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+
+type Theme = "light" | "dark";
+
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  const stored = localStorage.getItem("theme") as Theme | null;
+  if (stored === "light" || stored === "dark") return stored;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+  return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
+}
 
 export function Navigation() {
   const [location] = useLocation();
   const onResults = location.startsWith("/results");
+  const [theme, toggleTheme] = useTheme();
 
   return (
     <nav className="sticky top-0 z-50 w-full glass border-b border-border/40">
@@ -44,6 +65,18 @@ export function Navigation() {
           >
             GitHub
           </a>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="ml-1 rounded-lg p-2 text-muted-foreground hover:bg-surface-mid hover:text-foreground"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" aria-hidden />
+            ) : (
+              <Moon className="h-4 w-4" aria-hidden />
+            )}
+          </button>
         </div>
       </div>
     </nav>
