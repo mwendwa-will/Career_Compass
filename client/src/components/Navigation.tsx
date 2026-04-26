@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Compass, Moon, Sun } from "lucide-react";
+import { Compass, Moon, Sun, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,12 @@ export function Navigation() {
   const [location] = useLocation();
   const onResults = location.startsWith("/results");
   const [theme, toggleTheme] = useTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close drawer on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location]);
 
   return (
     <nav className="sticky top-0 z-50 w-full glass border-b border-border/40">
@@ -79,8 +85,47 @@ export function Navigation() {
               <Moon className="h-4 w-4" aria-hidden />
             )}
           </button>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-surface-mid hover:text-foreground md:hidden"
+          >
+            {menuOpen ? (
+              <X className="h-5 w-5" aria-hidden />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden />
+            )}
+          </button>
         </div>
       </div>
+
+      {/* Mobile drawer */}
+      {menuOpen && (
+        <div
+          id="mobile-menu"
+          className="border-t border-border/40 bg-card md:hidden"
+        >
+          <div className="container flex flex-col gap-1 px-6 py-4">
+            <NavLink href="/" active={location === "/"}>
+              Upload
+            </NavLink>
+            <NavLink href="/results" active={onResults} disabled>
+              Results
+            </NavLink>
+            <a
+              href="https://github.com/mwendwa-will/Career_Compass"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-mid hover:text-foreground"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
