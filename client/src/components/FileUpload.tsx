@@ -140,19 +140,15 @@ export function FileUpload({
             exit={{ opacity: 0, y: -8 }}
           >
             <div
-              role="button"
-              tabIndex={0}
-              onClick={triggerUpload}
-              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && triggerUpload()}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
               className={cn(
-                "group relative cursor-pointer overflow-hidden rounded-2xl p-10 transition-all duration-300",
+                "group relative overflow-hidden rounded-2xl p-10 transition-all duration-300",
                 "bg-card shadow-soft",
                 "ring-1 ring-inset ring-border/60",
-                "hover:shadow-lift hover:ring-primary/30",
+                "focus-within:ring-primary/40 focus-within:shadow-lift",
                 dragActive && "ring-2 ring-primary bg-primary-tint",
                 error && "ring-destructive/40 bg-destructive/5"
               )}
@@ -182,9 +178,9 @@ export function FileUpload({
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="font-display text-xl font-bold">
+                  <h2 className="font-display text-xl font-bold">
                     {error ? "Something went wrong" : "Drop your CV here"}
-                  </h3>
+                  </h2>
                   <p className="mx-auto max-w-sm text-sm text-muted-foreground">
                     {error ?? "PDF or DOCX, up to 5 MB. We'll extract your skills and match you to open roles."}
                   </p>

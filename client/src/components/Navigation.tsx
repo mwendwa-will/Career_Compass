@@ -66,7 +66,7 @@ function NavLink({
     active
       ? "bg-primary-tint text-primary"
       : "text-muted-foreground hover:bg-surface-mid hover:text-foreground",
-    disabled && "pointer-events-none opacity-50"
+    disabled && "pointer-events-none text-foreground/70"
   );
   if (disabled) return <span className={className}>{children}</span>;
   return (

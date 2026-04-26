@@ -165,7 +165,7 @@ export default function Results() {
           </aside>
 
           {/* Detail */}
-          <main className="lg:col-span-7 xl:col-span-8">
+          <main id="main-content" className="lg:col-span-7 xl:col-span-8">
             <AnimatePresence mode="wait">
               {selectedMatch ? (
                 <motion.div
@@ -248,7 +248,7 @@ function ProfileSummary({ data }: { data: AnalysisResponse }) {
       </div>
 
       <div className="mt-5">
-        <h4 className="eyebrow text-muted-foreground">Top skills</h4>
+        <span className="eyebrow text-muted-foreground">Top skills</span>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {parsedProfile.skills.slice(0, 8).map((skill, i) => (
             <span
@@ -268,7 +268,7 @@ function ProfileSummary({ data }: { data: AnalysisResponse }) {
 
       {parsedProfile.techStack.length > 0 && (
         <div className="mt-4">
-          <h4 className="eyebrow text-muted-foreground">Tech stack</h4>
+          <span className="eyebrow text-muted-foreground">Tech stack</span>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             {parsedProfile.techStack.slice(0, 10).join(" · ")}
           </p>

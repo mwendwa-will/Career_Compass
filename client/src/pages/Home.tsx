@@ -38,7 +38,7 @@ export default function Home() {
 
       <Navigation />
 
-      <main className="container px-6 pb-24 pt-12 md:pt-20">
+      <main id="main-content" className="container px-6 pb-24 pt-12 md:pt-20">
         {/* Hero — asymmetric two-column on desktop */}
         <section className="grid gap-12 md:grid-cols-12 md:items-center">
           <div className="md:col-span-7 md:pr-8">
@@ -121,12 +121,12 @@ export default function Home() {
       <div aria-hidden className="h-24 w-full bg-gradient-to-b from-surface to-surface-low" />
 
       {/* "How it works" — full-bleed surface-low band, staggered editorial pillars */}
-      <section className="bg-surface-low py-24">
+      <section aria-labelledby="how-it-works-heading" className="bg-surface-low py-24">
         <div className="container px-6">
           <div className="mb-16 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
             <div className="max-w-xl">
               <span className="eyebrow text-primary">The Process</span>
-              <h2 className="mt-3 font-display text-3xl font-extrabold leading-tight md:text-5xl text-balance">
+              <h2 id="how-it-works-heading" className="mt-3 font-display text-3xl font-extrabold leading-tight md:text-5xl text-balance">
                 From CV to ranked roles<br />in seconds.
               </h2>
             </div>
@@ -184,40 +184,36 @@ export default function Home() {
         </div>
       </section>
 
-      <main className="container px-6 pb-24 pt-24">
-
-        {/* Pull-quote — editorial moment */}
-        <section>
-          <div className="surface-card-lift overflow-hidden">
-            <div className="grid gap-0 md:grid-cols-12">
-              <div className="relative md:col-span-4 bg-primary-tint p-8">
-                <Quote className="absolute right-6 top-6 h-16 w-16 text-primary/15" />
-                <span className="eyebrow text-primary">Why colour-code matches?</span>
-              </div>
-              <div className="md:col-span-8 p-8 md:p-10">
-                <p className="font-display text-xl font-medium leading-relaxed text-foreground md:text-2xl text-balance">
-                  An 83% match isn't a number — it's a signal that your skills line up but you're
-                  one or two keywords away from the top of the shortlist. Career Compass shows you{" "}
-                  <span className="text-primary">which</span> ones.
-                </p>
-                <div className="mt-6 flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="h-px flex-1 bg-border" />
-                  <span className="font-mono uppercase tracking-widest">scoring rubric</span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-success" /> 80+
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-warning" /> 50–79
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-danger" /> &lt;50
-                  </span>
-                </div>
+      <section aria-labelledby="rubric-heading" className="container px-6 pb-24 pt-24">
+        <div className="surface-card-lift overflow-hidden">
+          <div className="grid gap-0 md:grid-cols-12">
+            <div className="relative md:col-span-4 bg-primary-tint p-8">
+              <Quote className="absolute right-6 top-6 h-16 w-16 text-primary/15" />
+              <h2 id="rubric-heading" className="eyebrow text-primary">Why colour-code matches?</h2>
+            </div>
+            <div className="md:col-span-8 p-8 md:p-10">
+              <p className="font-display text-xl font-medium leading-relaxed text-foreground md:text-2xl text-balance">
+                An 83% match isn't a number — it's a signal that your skills line up but you're
+                one or two keywords away from the top of the shortlist. Career Compass shows you{" "}
+                <span className="text-primary">which</span> ones.
+              </p>
+              <div className="mt-6 flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="h-px flex-1 bg-border" />
+                <span className="font-mono uppercase tracking-widest">scoring rubric</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-success" /> 80+
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-warning" /> 50–79
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-danger" /> &lt;50
+                </span>
               </div>
             </div>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
 
       <footer className="border-t border-border/40 bg-surface-low">
         <div className="container flex flex-col items-start justify-between gap-3 px-6 py-8 text-xs text-muted-foreground md:flex-row md:items-center">
