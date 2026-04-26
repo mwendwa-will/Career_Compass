@@ -22,17 +22,66 @@ interface CVFailureStateProps {
 
 const failureMeta: Record<
   FailureReason["code"],
-  { Icon: React.ComponentType<{ className?: string }> }
+  {
+    Icon: React.ComponentType<{ className?: string }>;
+    headline: string;
+    explainer: string;
+  }
 > = {
-  UNSUPPORTED_FORMAT: { Icon: FileQuestion },
-  IMAGE_ONLY: { Icon: ImageIcon },
-  NON_STANDARD_LAYOUT: { Icon: FileQuestion },
-  MISSING_SECTIONS: { Icon: AlertTriangle },
-  UNSUPPORTED_LANGUAGE: { Icon: AlertTriangle },
-  FILE_SIZE_INVALID: { Icon: FileX },
-  LOW_CONFIDENCE: { Icon: AlertTriangle },
-  CORRUPTED_FILE: { Icon: FileX },
-  PASSWORD_PROTECTED: { Icon: ShieldAlert },
+  UNSUPPORTED_FORMAT: {
+    Icon: FileQuestion,
+    headline: "Unsupported file format.",
+    explainer:
+      "We only accept text-based PDF and DOCX files. The file you uploaded uses a format our parser can't read.",
+  },
+  IMAGE_ONLY: {
+    Icon: ImageIcon,
+    headline: "Your CV is image-only.",
+    explainer:
+      "The internal structure appears to be flattened images rather than digital text. This usually happens with scanned resumes or files printed to image.",
+  },
+  NON_STANDARD_LAYOUT: {
+    Icon: FileQuestion,
+    headline: "The layout is non-standard.",
+    explainer:
+      "Multi-column layouts, heavy graphics, or unusual section ordering can confuse our parser. A simpler, single-column template extracts much more cleanly.",
+  },
+  MISSING_SECTIONS: {
+    Icon: AlertTriangle,
+    headline: "We couldn't find a Skills section.",
+    explainer:
+      "Your CV parsed, but our matcher relies on a clearly labelled Skills (or Tech Stack) section to score you against open roles.",
+  },
+  UNSUPPORTED_LANGUAGE: {
+    Icon: AlertTriangle,
+    headline: "We don't support this language yet.",
+    explainer:
+      "Career Compass currently only matches English-language CVs. Multilingual support is on the roadmap.",
+  },
+  FILE_SIZE_INVALID: {
+    Icon: FileX,
+    headline: "The file is too short or empty.",
+    explainer:
+      "The upload succeeded but contained almost no extractable text. Either the document is blank, the export stripped its content, or the file is much smaller than a typical CV.",
+  },
+  LOW_CONFIDENCE: {
+    Icon: AlertTriangle,
+    headline: "Our parser isn't confident.",
+    explainer:
+      "We extracted some text, but couldn't reliably identify your skills, titles, or years of experience. Matching against this profile would be misleading.",
+  },
+  CORRUPTED_FILE: {
+    Icon: FileX,
+    headline: "The file appears corrupted.",
+    explainer:
+      "The upload completed but the file's internal structure is damaged. Re-export the document from its source application and try again.",
+  },
+  PASSWORD_PROTECTED: {
+    Icon: ShieldAlert,
+    headline: "This file is password-protected.",
+    explainer:
+      "Career Compass can't open encrypted documents. Remove the password from your CV and re-upload \u2014 your file never leaves the analysis pipeline.",
+  },
 };
 
 const QUICK_FIXES = [
@@ -43,7 +92,8 @@ const QUICK_FIXES = [
 ];
 
 export function CVFailureState({ failure, onRetry, onManualEntry }: CVFailureStateProps) {
-  const Icon = (failureMeta[failure.code] ?? failureMeta.MISSING_SECTIONS).Icon;
+  const meta = failureMeta[failure.code] ?? failureMeta.MISSING_SECTIONS;
+  const { Icon, headline, explainer } = meta;
   const fixes =
     failure.suggestedFixes && failure.suggestedFixes.length > 0
       ? failure.suggestedFixes.slice(0, 3)
@@ -61,7 +111,7 @@ export function CVFailureState({ failure, onRetry, onManualEntry }: CVFailureSta
           <div className="space-y-3">
             <span className="eyebrow text-primary">Analysis Halted</span>
             <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl text-balance">
-              We couldn't read your CV.
+              {headline}
             </h1>
             <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty">
               {failure.message}
@@ -94,11 +144,7 @@ export function CVFailureState({ failure, onRetry, onManualEntry }: CVFailureSta
                 </h2>
               </div>
               <div className="space-y-4 leading-relaxed text-muted-foreground">
-                <p>
-                  Our document processing engine encountered an obstacle. While the file was
-                  successfully received, the internal structure couldn't be parsed into the
-                  digital text data our matcher needs.
-                </p>
+                <p>{explainer}</p>
                 <p className="text-foreground">{failure.actionableStep}</p>
               </div>
             </motion.div>
