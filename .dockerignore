@@ -1,0 +1,38 @@
+# Keep the docker build context small; never ship local dev artifacts
+# into the image (the Dockerfile installs deps from requirements.txt).
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/.mypy_cache/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.venv/
+**/venv/
+backend/venv/
+
+# SQLite + persisted task data (mounted as a volume in compose)
+backend/data/
+backend/db/
+
+# Environment / secrets
+**/.env
+**/.env.*
+!**/.env.example
+
+# Frontend artifacts (the backend image doesn't need these)
+node_modules/
+dist/
+.local/
+
+# VCS, editor, OS noise
+.git/
+.gitignore
+.github/
+.vscode/
+.idea/
+**/.DS_Store
+
+# Docs / project meta not needed inside the image
+*.md
+LICENSE
