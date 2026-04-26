@@ -53,14 +53,14 @@ export default function Home() {
                 AI-powered career matching
               </span>
 
-              <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl lg:text-7xl text-balance">
+              <h1 className="font-display text-5xl font-extrabold leading-[1.05] tracking-tighter md:text-6xl lg:text-7xl text-balance">
                 Find the role you were{" "}
                 <span className="relative inline-block">
                   <span
                     className="bg-clip-text text-transparent"
                     style={{
                       backgroundImage:
-                        "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-soft)) 100%)",
+                        "linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--primary-soft)) 100%)",
                     }}
                   >
                     made for
