@@ -1,6 +1,12 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, type AnalysisResponse } from "@shared/routes";
+
+// Polling configuration for /api/analyze/upload task polling.
+const POLL_INTERVAL_MS = 2000;
+// 5 minutes worth of polling: covers slow CV parses + SearXNG fan-out
+// without leaving the page polling forever if the backend gets stuck.
+const MAX_POLL_ATTEMPTS = 150;
 
 // GET /api/jobs
 export function useJobs() {
@@ -28,12 +34,41 @@ export function useJob(id: number) {
   });
 }
 
-// POST /api/analyze/upload
+// POST /api/analyze/upload — uploads, then polls /api/tasks/:id until done.
+// Polling is bounded by MAX_POLL_ATTEMPTS and aborted on unmount via an
+// AbortController so the fetch loop doesn't outlive the component.
 export function useAnalyzeCV() {
   const [progress, setProgress] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Abort any in-flight polling when the consumer unmounts.
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  const sleep = (ms: number, signal: AbortSignal) =>
+    new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(resolve, ms);
+      signal.addEventListener(
+        "abort",
+        () => {
+          clearTimeout(timer);
+          reject(new DOMException("Polling aborted", "AbortError"));
+        },
+        { once: true }
+      );
+    });
 
   const mutation = useMutation({
     mutationFn: async (file: File) => {
+      // Cancel any previous run before starting a new one.
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const { signal } = controller;
+
       setProgress("Uploading...");
 
       const formData = new FormData();
@@ -42,6 +77,7 @@ export function useAnalyzeCV() {
       const res = await fetch(api.analyze.upload.path, {
         method: 'POST',
         body: formData,
+        signal,
       });
 
       if (res.status === 400) {
@@ -57,8 +93,11 @@ export function useAnalyzeCV() {
       setProgress("Queued for analysis...");
 
       const poll = async (): Promise<AnalysisResponse> => {
-        while (true) {
-          const taskRes = await fetch(api.tasks.get.path.replace(':id', taskId));
+        for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+          const taskRes = await fetch(
+            api.tasks.get.path.replace(':id', taskId),
+            { signal }
+          );
           if (!taskRes.ok) {
             throw new Error("Failed to check task status");
           }
@@ -73,13 +112,17 @@ export function useAnalyzeCV() {
           if (task.status === "failed") {
             throw new Error(task.error || "Analysis failed");
           }
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await sleep(POLL_INTERVAL_MS, signal);
         }
+        throw new Error("Analysis is taking longer than expected. Please try again.");
       };
 
       return poll();
     },
-    onSettled: () => setProgress(null),
+    onSettled: () => {
+      setProgress(null);
+      abortRef.current = null;
+    },
   });
 
   return { ...mutation, progress };

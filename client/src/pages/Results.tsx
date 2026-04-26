@@ -3,9 +3,9 @@ import { useLocation } from "wouter";
 import { Navigation } from "@/components/Navigation";
 import { JobCard } from "@/components/JobCard";
 import { CVFailureState } from "@/components/CVFailureState";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, CheckCircle2, XCircle, ChevronRight, AlertTriangle, Download, ExternalLink } from "lucide-react";
-import type { AnalysisResponse } from "@shared/schema";
+import { motion } from "framer-motion";
+import { CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
+import { analysisResponseSchema, type AnalysisResponse } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -22,15 +22,22 @@ export default function Results() {
       return;
     }
     try {
-      const parsed = JSON.parse(stored);
+      const raw = JSON.parse(stored);
+      const result = analysisResponseSchema.safeParse(raw);
+      if (!result.success) {
+        sessionStorage.removeItem('lastAnalysis');
+        setLocation("/");
+        return;
+      }
+      const parsed = result.data;
       setData(parsed);
       // Select best match by default
       if (parsed.matches && parsed.matches.length > 0) {
-        // Sort by match percentage descending
         const sorted = [...parsed.matches].sort((a, b) => b.matchPercentage - a.matchPercentage);
         setSelectedJobId(sorted[0].jobId);
       }
-    } catch (e) {
+    } catch {
+      sessionStorage.removeItem('lastAnalysis');
       setLocation("/");
     }
   }, [setLocation]);
@@ -173,10 +180,32 @@ function JobListItem({ match, isSelected, onClick }: { match: MatchResult, isSel
   );
 }
 
-function JobDetailView({ match }: { match: any }) {
-  const { data: job, isLoading } = useJob(match.jobId);
+function JobDetailView({ match }: { match: MatchResult }) {
+  const { data: fetchedJob, isLoading } = useJob(match.jobId);
 
-  if (isLoading || !job) {
+  // Live (SearXNG) jobs aren't persisted in the database, so /api/jobs/:id
+  // returns 404. Fall back to the embedded summary on `match.job` instead
+  // of leaving the skeleton up forever.
+  const job = fetchedJob ?? (match.job
+    ? {
+        id: match.jobId,
+        title: match.job.title,
+        company: match.job.company,
+        location: match.job.location,
+        type: "Full-time",
+        description: "",
+        requirements: [] as string[],
+        skillsRequired: match.matchedSkills,
+        salaryRange: null,
+        postedAt: "Recently",
+        sourceUrl: null,
+        isLive: match.job.isLive,
+        sourceName: match.job.sourceName,
+        externalId: null,
+      }
+    : null);
+
+  if (isLoading && !job) {
     return (
       <div className="space-y-8 animate-pulse">
         <div className="h-12 bg-muted/20 w-1/2 rounded-lg" />
@@ -185,6 +214,14 @@ function JobDetailView({ match }: { match: any }) {
           <div className="h-64 bg-muted/20 rounded-xl" />
           <div className="h-64 bg-muted/20 rounded-xl" />
         </div>
+      </div>
+    );
+  }
+
+  if (!job) {
+    return (
+      <div className="h-full flex items-center justify-center text-muted-foreground">
+        Job details unavailable.
       </div>
     );
   }
@@ -300,21 +337,33 @@ function JobDetailView({ match }: { match: any }) {
         <div className="space-y-8">
            <section>
              <h3 className="text-lg font-bold font-display mb-4">Description</h3>
-             <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
-               {job.description}
-             </p>
+             {job.description ? (
+               <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                 {job.description}
+               </p>
+             ) : (
+               <p className="text-sm italic text-muted-foreground">
+                 Full description not available for this listing.
+               </p>
+             )}
            </section>
 
            <section>
              <h3 className="text-lg font-bold font-display mb-4">Requirements</h3>
-             <ul className="space-y-3">
-               {(job.requirements as string[]).map((req, i) => (
-                 <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
-                   <div className="w-1.5 h-1.5 rounded-full bg-border mt-2" />
+             {job.requirements && job.requirements.length > 0 ? (
+               <ul className="space-y-3">
+                 {(job.requirements as string[]).map((req, i) => (
+                   <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
+                     <div className="w-1.5 h-1.5 rounded-full bg-border mt-2" />
                    {req}
                  </li>
                ))}
-             </ul>
+               </ul>
+             ) : (
+               <p className="text-sm italic text-muted-foreground">
+                 Requirements not parsed for this listing.
+               </p>
+             )}
            </section>
            
            {job.salaryRange && (

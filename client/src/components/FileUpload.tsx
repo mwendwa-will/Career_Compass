@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -14,6 +15,7 @@ export function FileUpload({ onFileSelect, isAnalyzing, error, progress }: FileU
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -47,7 +49,11 @@ export function FileUpload({ onFileSelect, isAnalyzing, error, progress }: FileU
     // Basic validation
     const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!validTypes.includes(file.type)) {
-      alert("Please upload a PDF or DOCX file.");
+      toast({
+        variant: "destructive",
+        title: "Unsupported file",
+        description: "Please upload a PDF or DOCX file.",
+      });
       return;
     }
     setFileName(file.name);

@@ -14,11 +14,9 @@ export function Navigation() {
           </div>
           <span className="font-display font-bold text-xl tracking-tight">RoleMatch.</span>
         </Link>
-        
+
         <div className="hidden md:flex items-center gap-8">
           <NavLink href="/" active={location === "/"}>Home</NavLink>
-          <NavLink href="/jobs" active={location.startsWith("/jobs")}>Open Roles</NavLink>
-          <div className="h-4 w-px bg-border mx-2" />
           <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Upload CV
           </Link>
