@@ -2,6 +2,20 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { api, type AnalysisResponse } from "@shared/routes";
 
+export type WorkArrangement = "remote" | "hybrid" | "onsite";
+export type EmploymentType =
+  | "full-time"
+  | "part-time"
+  | "contract"
+  | "freelance"
+  | "internship";
+
+export interface AnalysisPreferences {
+  locations?: string[];
+  arrangements?: WorkArrangement[];
+  employmentTypes?: EmploymentType[];
+}
+
 // Polling configuration for /api/analyze/upload task polling.
 const POLL_INTERVAL_MS = 2000;
 // 5 minutes worth of polling: covers slow CV parses + SearXNG fan-out
@@ -62,7 +76,12 @@ export function useAnalyzeCV() {
     });
 
   const mutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async (
+      input: File | { file: File; preferences?: AnalysisPreferences }
+    ) => {
+      const file = input instanceof File ? input : input.file;
+      const preferences = input instanceof File ? undefined : input.preferences;
+
       // Cancel any previous run before starting a new one.
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -73,6 +92,15 @@ export function useAnalyzeCV() {
 
       const formData = new FormData();
       formData.append('file', file);
+      if (preferences?.locations?.length) {
+        formData.append('locations', preferences.locations.join(','));
+      }
+      if (preferences?.arrangements?.length) {
+        formData.append('arrangements', preferences.arrangements.join(','));
+      }
+      if (preferences?.employmentTypes?.length) {
+        formData.append('employment_types', preferences.employmentTypes.join(','));
+      }
 
       const res = await fetch(api.analyze.upload.path, {
         method: 'POST',

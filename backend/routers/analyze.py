@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from sqlalchemy import select
@@ -31,11 +31,19 @@ def get_store(request: Request) -> TaskStore:
 async def analyze_upload(
     request: Request,
     file: UploadFile = File(...),
+    locations: str = Form(default=""),
+    arrangements: str = Form(default=""),
+    employment_types: str = Form(default=""),
     store: TaskStore = Depends(get_store),
 ):
     content = await file.read()
     if len(content) > settings.max_upload_size:
         return JSONResponse(status_code=400, content={"message": "File too large"})
+
+    # Form values arrive as comma-separated strings; split + trim into lists.
+    pref_locations = [s.strip() for s in locations.split(",") if s.strip()]
+    pref_arrangements = [s.strip() for s in arrangements.split(",") if s.strip()]
+    pref_employment = [s.strip() for s in employment_types.split(",") if s.strip()]
 
     task_id = await store.create_task()
     filename = file.filename
@@ -58,6 +66,9 @@ async def analyze_upload(
                 skills=parsed_profile.skills,
                 location=parsed_profile.location,
                 job_type=parsed_profile.preferred_job_type,
+                locations=pref_locations or None,
+                arrangements=pref_arrangements or None,
+                employment_types=pref_employment or None,
             )
 
             async with SessionLocal() as session:
@@ -66,7 +77,13 @@ async def analyze_upload(
                 all_jobs = live_jobs + [job.to_dict() for job in cached_jobs]
 
             await store.update_task(task_id, progress="Analyzing matches...")
-            matches = match_profile_to_jobs(parsed_profile, all_jobs)
+            matches = match_profile_to_jobs(
+                parsed_profile,
+                all_jobs,
+                preferred_locations=pref_locations,
+                preferred_arrangements=pref_arrangements,
+                preferred_employment=pref_employment,
+            )
 
             await store.update_task(
                 task_id,

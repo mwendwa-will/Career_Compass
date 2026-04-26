@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Navigation } from "@/components/Navigation";
 import { FileUpload } from "@/components/FileUpload";
-import { useAnalyzeCV } from "@/hooks/use-jobs";
+import { JobPreferences } from "@/components/JobPreferences";
+import { useAnalyzeCV, type AnalysisPreferences } from "@/hooks/use-jobs";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
@@ -16,11 +18,17 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const analyzeMutation = useAnalyzeCV();
+  const [preferences, setPreferences] = useState<AnalysisPreferences>({
+    locations: [],
+    arrangements: [],
+    employmentTypes: [],
+  });
 
   const handleFileSelect = async (file: File) => {
     try {
-      const data = await analyzeMutation.mutateAsync(file);
+      const data = await analyzeMutation.mutateAsync({ file, preferences });
       sessionStorage.setItem("lastAnalysis", JSON.stringify(data));
+      sessionStorage.setItem("lastPreferences", JSON.stringify(preferences));
       setLocation("/results");
     } catch (err) {
       toast({
@@ -104,7 +112,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-            className="md:col-span-5"
+            className="md:col-span-5 space-y-6"
           >
             <FileUpload
               onFileSelect={handleFileSelect}
@@ -112,6 +120,11 @@ export default function Home() {
               error={analyzeMutation.error ? analyzeMutation.error.message : null}
               progress={analyzeMutation.progress}
               onCancel={() => analyzeMutation.reset()}
+            />
+            <JobPreferences
+              value={preferences}
+              onChange={setPreferences}
+              disabled={analyzeMutation.isPending}
             />
           </motion.div>
         </section>

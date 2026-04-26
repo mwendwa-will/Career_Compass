@@ -20,16 +20,41 @@ def _sanitize(text: Optional[str]) -> str:
     return " ".join(cleaned.split())[:256]
 
 
-def _build_queries(title: Optional[str], skills: List[str], location: Optional[str]) -> List[str]:
+ARRANGEMENT_TERMS: Dict[str, str] = {
+    "remote": "remote",
+    "hybrid": "hybrid",
+    "onsite": "on-site",
+    "on-site": "on-site",
+}
+
+EMPLOYMENT_TERMS: Dict[str, str] = {
+    "full-time": "full-time",
+    "part-time": "part-time",
+    "contract": "contract",
+    "freelance": "freelance",
+    "internship": "internship",
+}
+
+
+def _build_queries(
+    title: Optional[str],
+    skills: List[str],
+    location: Optional[str],
+    arrangement: Optional[str] = None,
+    employment: Optional[str] = None,
+) -> List[str]:
     t = _sanitize(title) or "software engineer"
     loc = _sanitize(location) or "remote"
     top_skills = [s for s in skills[:2] if s]
     skill_str = " ".join(top_skills)
+    arrangement_term = ARRANGEMENT_TERMS.get((arrangement or "").lower(), "")
+    employment_term = EMPLOYMENT_TERMS.get((employment or "").lower(), "")
+    extra = " ".join(t for t in (arrangement_term, employment_term) if t)
     return [
-        f"site:linkedin.com/jobs \"{t}\" {skill_str} {loc}",
-        f"site:indeed.com/viewjob \"{t}\" {skill_str} {loc}",
-        f"site:glassdoor.com/job-listing \"{t}\" {loc}",
-        f"site:weworkremotely.com \"{t}\" OR site:remoteok.com \"{t}\"",
+        f"site:linkedin.com/jobs \"{t}\" {skill_str} {loc} {extra}".strip(),
+        f"site:indeed.com/viewjob \"{t}\" {skill_str} {loc} {extra}".strip(),
+        f"site:glassdoor.com/job-listing \"{t}\" {loc} {extra}".strip(),
+        f"site:weworkremotely.com \"{t}\" OR site:remoteok.com \"{t}\" {extra}".strip(),
     ]
 
 
@@ -91,43 +116,82 @@ async def fetch_live_jobs(
     title: Optional[str] = None,
     skills: Optional[List[str]] = None,
     location: Optional[str] = None,
-    job_type: Optional[str] = None,  # job_type not used in queries yet
+    job_type: Optional[str] = None,
+    locations: Optional[List[str]] = None,
+    arrangements: Optional[List[str]] = None,
+    employment_types: Optional[List[str]] = None,
 ) -> List[dict]:
-    queries = _build_queries(title, skills or [], location)
+    # Normalize the multi-value preference axes. If the user didn't pick any
+    # we still want a single iteration so the legacy single-value args win.
+    loc_list = [l for l in (locations or []) if l] or [location]
+    arr_list = [a for a in (arrangements or []) if a] or [None]
+    emp_list = [e for e in (employment_types or []) if e] or [job_type]
+
     collected: Dict[str, dict] = {}
 
-    for q in queries:
-        results = await _search_searxng(q)
-        for job in results:
-            key = job.get("external_id") or job.get("source_url") or job.get("title")
-            if key and key not in collected:
-                collected[key] = job
+    for loc in loc_list:
+        for arr in arr_list:
+            for emp in emp_list:
+                queries = _build_queries(title, skills or [], loc, arrangement=arr, employment=emp)
+                for q in queries:
+                    results = await _search_searxng(q)
+                    for job in results:
+                        # Stamp the search axis onto the result so the matcher
+                        # can credit jobs that came back for the user's
+                        # preferred location/arrangement.
+                        if loc and not job.get("location"):
+                            job["location"] = loc
+                        if arr and not job.get("arrangement"):
+                            job["arrangement"] = ARRANGEMENT_TERMS.get(arr.lower(), arr)
+                        if emp:
+                            job["type"] = EMPLOYMENT_TERMS.get(emp.lower(), emp).title()
+                        key = job.get("external_id") or job.get("source_url") or job.get("title")
+                        if key and key not in collected:
+                            collected[key] = job
 
     if collected:
         return list(collected.values())
 
-    # Fallback mock if SearXNG unavailable
+    # Mock fallback — emit one synthetic role per (location × arrangement ×
+    # employment) combo so the UI demonstrably reflects the user's filters
+    # even when SearXNG is unreachable.
     fallback_title = title or "Software Engineer"
     top_skills = (skills or [])[:3]
-    location_label = location or "Remote"
-    base_description = f"Role focused on {', '.join(top_skills) if top_skills else 'modern web development'}."
-    return [
-        {
-            "id": 9000,
-            "title": f"{fallback_title} (Remote)",
-            "company": "MockCorp",
-            "location": location_label,
-            "type": job_type or "Full-time",
-            "description": base_description,
-            "requirements": ["5+ years experience", "Strong communication", "Team collaboration"],
-            "skills_required": top_skills or ["react", "typescript", "node.js"],
-            "optional_skills": ["docker", "kubernetes"],
-            "experience_level": "senior",
-            "salary_range": None,
-            "posted_at": "Recently",
-            "source_url": "https://example.com/mock-1",
-            "source_name": "Mock",
-            "is_live": True,
-            "external_id": _hash_external_id("https://example.com/mock-1"),
-        }
-    ]
+    base_id = 9000
+    mocks: List[dict] = []
+    idx = 0
+    for loc in loc_list:
+        for arr in arr_list:
+            for emp in emp_list:
+                arrangement_label = ARRANGEMENT_TERMS.get((arr or "").lower(), "")
+                employment_label = EMPLOYMENT_TERMS.get((emp or "").lower(), "Full-time")
+                location_label = loc or "Remote"
+                arrangement_suffix = f" ({arrangement_label.title()})" if arrangement_label else ""
+                description = (
+                    f"{employment_label.title()} role focused on "
+                    f"{', '.join(top_skills) if top_skills else 'modern web development'}"
+                    f" — based in {location_label}{(' / ' + arrangement_label) if arrangement_label else ''}."
+                )
+                mocks.append(
+                    {
+                        "id": base_id + idx,
+                        "title": f"{fallback_title}{arrangement_suffix}",
+                        "company": "MockCorp",
+                        "location": location_label,
+                        "arrangement": arrangement_label or None,
+                        "type": employment_label.title(),
+                        "description": description,
+                        "requirements": ["Strong communication", "Team collaboration"],
+                        "skills_required": top_skills or ["react", "typescript", "node.js"],
+                        "optional_skills": ["docker", "kubernetes"],
+                        "experience_level": "senior",
+                        "salary_range": None,
+                        "posted_at": "Recently",
+                        "source_url": f"https://example.com/mock-{idx}",
+                        "source_name": "Mock",
+                        "is_live": True,
+                        "external_id": _hash_external_id(f"https://example.com/mock-{idx}"),
+                    }
+                )
+                idx += 1
+    return mocks
