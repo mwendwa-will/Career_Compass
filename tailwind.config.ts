@@ -41,7 +41,20 @@ export default {
           foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
           soft: "hsl(var(--primary-soft) / <alpha-value>)",
           tint: "hsl(var(--primary-tint) / <alpha-value>)",
+          fixed: "hsl(var(--primary-fixed) / <alpha-value>)",
         },
+        tertiary: {
+          DEFAULT: "hsl(var(--tertiary) / <alpha-value>)",
+          foreground: "hsl(var(--tertiary-foreground) / <alpha-value>)",
+        },
+        surface: {
+          DEFAULT: "hsl(var(--surface) / <alpha-value>)",
+          low: "hsl(var(--surface-low) / <alpha-value>)",
+          mid: "hsl(var(--surface-mid) / <alpha-value>)",
+          high: "hsl(var(--surface-high) / <alpha-value>)",
+          highest: "hsl(var(--surface-highest) / <alpha-value>)",
+        },
+        "outline-variant": "hsl(var(--outline-variant) / <alpha-value>)",
         secondary: {
           DEFAULT: "hsl(var(--secondary) / <alpha-value>)",
           foreground: "hsl(var(--secondary-foreground) / <alpha-value>)",

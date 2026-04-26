@@ -115,64 +115,79 @@ export default function Home() {
             />
           </motion.div>
         </section>
+      </main>
 
-        {/* "How it works" — three editorial pillars */}
-        <section className="mt-24 md:mt-32">
-          <div className="mb-10 flex items-baseline justify-between gap-6">
-            <h2 className="font-display text-2xl font-bold md:text-3xl">
-              From CV to ranked roles in seconds.
-            </h2>
-            <span className="eyebrow hidden text-muted-foreground md:inline">
-              How it works
-            </span>
+      {/* Asymmetric section transition — Stitch "gradient strip" pattern */}
+      <div aria-hidden className="h-24 w-full bg-gradient-to-b from-surface to-surface-low" />
+
+      {/* "How it works" — full-bleed surface-low band, staggered editorial pillars */}
+      <section className="bg-surface-low py-24">
+        <div className="container px-6">
+          <div className="mb-16 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+            <div className="max-w-xl">
+              <span className="eyebrow text-primary">The Process</span>
+              <h2 className="mt-3 font-display text-3xl font-extrabold leading-tight md:text-5xl text-balance">
+                From CV to ranked roles<br />in seconds.
+              </h2>
+            </div>
+            <p className="max-w-sm text-lg leading-relaxed text-muted-foreground">
+              We've removed the noise of job boards to focus on the signal of your potential.
+            </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-3">
             {[
               {
                 Icon: ScanLine,
-                title: "Parse",
+                title: "Parse your profile",
                 desc: "spaCy + heuristics extract skills, experience, and titles from PDF or DOCX with a confidence score.",
                 step: "01",
+                offset: "",
               },
               {
                 Icon: Target,
-                title: "Search",
+                title: "Match across boards",
                 desc: "Self-hosted SearXNG fans your top role queries across job boards. No tracking, no API keys.",
                 step: "02",
+                offset: "md:mt-12",
               },
               {
                 Icon: TrendingUp,
-                title: "Match",
-                desc: "Weighted score (skills, experience, title) with a colour-coded ring and a gap analysis.",
+                title: "Discover ideal roles",
+                desc: "Weighted score across skills, experience, and title with a colour-coded ring and gap analysis.",
                 step: "03",
+                offset: "",
               },
-            ].map(({ Icon, title, desc, step }, i) => (
+            ].map(({ Icon, title, desc, step, offset }, i) => (
               <motion.article
                 key={title}
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-80px" }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="surface-card-lift p-6"
+                className={`relative bg-card rounded-xl p-10 transition-transform duration-500 hover:-translate-y-2 ${offset}`}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-tint text-primary">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <span className="font-display text-3xl font-bold text-surface-highest">
-                    {step}
-                  </span>
+                <span
+                  className="step-ghost-number absolute right-8 top-8 text-5xl select-none pointer-events-none"
+                  aria-hidden
+                >
+                  {step}
+                </span>
+                <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-surface-mid text-primary">
+                  <Icon className="h-6 w-6" />
                 </div>
-                <h3 className="mt-5 font-display text-lg font-bold">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+                <h3 className="mt-6 font-display text-xl font-bold">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{desc}</p>
               </motion.article>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
+
+      <main className="container px-6 pb-24 pt-24">
 
         {/* Pull-quote — editorial moment */}
-        <section className="mt-24 md:mt-32">
+        <section>
           <div className="surface-card-lift overflow-hidden">
             <div className="grid gap-0 md:grid-cols-12">
               <div className="relative md:col-span-4 bg-primary-tint p-8">

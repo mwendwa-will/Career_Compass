@@ -11,33 +11,40 @@
 @tailwind utilities;
 
 :root {
-  /* Surfaces */
-  --background: 250 100% 99%;
-  --foreground: 224 41% 13%;
-  --surface: 250 100% 99%;
-  --surface-low: 234 100% 97%;
-  --surface-mid: 232 100% 95%;
-  --surface-high: 230 100% 93%;
-  --surface-highest: 230 78% 92%;
+  /* Stitch "Ascend Indigo" tonal surface stack — pure white reserved for cards on tinted bg */
+  --background: 262 100% 99%;        /* #fcf8ff */
+  --foreground: 240 14% 12%;         /* #1b1b24 */
+  --surface: 262 100% 99%;           /* surface */
+  --surface-low: 247 100% 97%;       /* #f5f2ff — sectional band */
+  --surface-mid: 257 39% 95%;        /* #f0ecf9 — surface-container */
+  --surface-high: 257 31% 93%;       /* #eae6f4 — surface-container-high */
+  --surface-highest: 257 22% 91%;    /* #e4e1ee — surface-container-highest */
 
-  --card: 0 0% 100%;
-  --card-foreground: 224 41% 13%;
+  --card: 0 0% 100%;                 /* surface-container-lowest */
+  --card-foreground: 240 14% 12%;
   --popover: 0 0% 100%;
-  --popover-foreground: 224 41% 13%;
+  --popover-foreground: 240 14% 12%;
 
-  --muted: 234 100% 97%;
-  --muted-foreground: 240 11% 40%;
+  --muted: 247 100% 97%;
+  --muted-foreground: 240 11% 30%;   /* #464555 — on-surface-variant */
 
-  /* Brand — indigo gradient pair */
-  --primary: 245 70% 47%;
+  /* Brand — indigo gradient pair (#3525cd → #4f46e5) */
+  --primary: 246 70% 47%;
   --primary-foreground: 0 0% 100%;
-  --primary-soft: 245 78% 59%;
-  --primary-tint: 247 100% 94%;
+  --primary-soft: 245 76% 59%;
+  --primary-tint: 245 100% 94%;       /* #e2dfff — primary-fixed */
+  --primary-fixed: 245 100% 94%;      /* alias for clarity */
+  --on-primary-fixed: 247 100% 21%;   /* #0f0069 */
 
-  --secondary: 234 100% 95%;
-  --secondary-foreground: 224 41% 13%;
-  --accent: 247 100% 94%;
-  --accent-foreground: 245 70% 47%;
+  --secondary: 247 100% 94%;          /* secondary-fixed */
+  --secondary-foreground: 240 14% 12%;
+  --accent: 245 100% 94%;
+  --accent-foreground: 246 70% 47%;
+
+  /* Tertiary — sophisticated earthy warning, used sparingly */
+  --tertiary: 23 100% 25%;            /* #7e3000 */
+  --tertiary-container: 245 100% 94%; /* fallback */
+  --tertiary-foreground: 0 0% 100%;
 
   /* Status */
   --success: 159 64% 38%;
@@ -50,10 +57,11 @@
   --destructive: 350 89% 50%;
   --destructive-foreground: 0 0% 100%;
 
-  /* Outlines — never use at full opacity */
-  --border: 234 22% 88%;
-  --input: 234 22% 88%;
-  --ring: 245 78% 59%;
+  /* Outlines — "Ghost border" rule: never at full opacity */
+  --border: 248 22% 81%;              /* #c7c4d8 — outline-variant */
+  --outline-variant: 248 22% 81%;     /* alias */
+  --input: 248 22% 81%;
+  --ring: 245 76% 59%;
 
   /* Charts (shadcn parity) */
   --chart-1: 245 70% 47%;
@@ -186,6 +194,20 @@
   .bg-surface-mid { background-color: hsl(var(--surface-mid)); }
   .bg-surface-high { background-color: hsl(var(--surface-high)); }
   .bg-surface-highest { background-color: hsl(var(--surface-highest)); }
+
+  /* Stitch alias utilities */
+  .bg-surface-container-lowest { background-color: hsl(0 0% 100%); }
+  .bg-surface-container-low { background-color: hsl(var(--surface-low)); }
+  .bg-surface-container { background-color: hsl(var(--surface-mid)); }
+  .bg-primary-fixed { background-color: hsl(var(--primary-fixed)); }
+  .text-on-surface-variant { color: hsl(var(--muted-foreground)); }
+
+  /* Editorial step-number ghost (huge faded number behind a card) */
+  .step-ghost-number {
+    color: hsl(var(--border) / 0.45);
+    font-weight: 900;
+    line-height: 1;
+  }
 
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-lift { box-shadow: var(--shadow-lift); }
