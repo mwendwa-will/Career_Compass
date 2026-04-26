@@ -12,7 +12,7 @@ export function Navigation() {
           <div className="p-2 rounded-lg bg-primary text-primary-foreground group-hover:bg-primary/90 transition-colors">
             <Briefcase className="w-5 h-5" />
           </div>
-          <span className="font-display font-bold text-xl tracking-tight">RoleMatch.</span>
+          <span className="font-display font-bold text-xl tracking-tight">Career Compass</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8">

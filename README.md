@@ -1,259 +1,150 @@
-# Career Compass - AI-Powered Career Matching Platform
+# Career Compass
 
-An intelligent career matching platform that analyzes CVs/resumes and matches candidates with suitable job opportunities based on skills, experience, and requirements.
+Upload a CV (PDF or DOCX), get a ranked list of jobs scored against the
+candidate's skills and experience. The frontend is a Vite + React SPA;
+the backend is a FastAPI service that parses the CV with spaCy, fans
+out queries to a self-hosted SearXNG instance for live job postings,
+and returns weighted matches.
 
-## Features
+## Stack
 
-- 📄 **CV Upload & Parsing**: Upload CVs in PDF or DOCX format with intelligent parsing
-- 🎯 **Smart Matching**: AI-powered job matching with percentage-based compatibility scores
-- 📊 **Skill Gap Analysis**: Detailed breakdown of strengths and areas for improvement
-- 💼 **Job Management**: Browse seeded job listings and simulated live search
-- 🎨 **Modern UI**: Editorial-style design with smooth animations
-- 🔍 **Detailed Insights**: Comprehensive feedback on profile-to-job fit
+- **Frontend:** React 18 + TypeScript, Vite, Wouter, TanStack Query,
+  shadcn/ui (Radix + Tailwind), Framer Motion.
+- **Backend:** FastAPI + Pydantic v2, SQLAlchemy async + aiosqlite,
+  pdfplumber / python-docx / python-magic for parsing, spaCy
+  (`en_core_web_sm`) for entity extraction, slowapi for rate limiting.
+- **Job source:** SearXNG (self-hosted, headless metasearch).
+- **Storage:** SQLite at `backend/data/career_compass.db`. Background
+  task state is in-memory.
 
-## Tech Stack
+## Repository layout
 
-### Frontend
-- **React** with TypeScript
-- **Vite** for fast development and bundling
-- **Wouter** for lightweight routing
-- **TanStack React Query** for server state management
-- **shadcn/ui** component library (Radix UI + Tailwind CSS)
-- **Framer Motion** for animations
-
-### Backend
-- **Express 5** with Node.js
-- **TypeScript** with tsx runtime
-- **Multer** for file uploads (5MB limit)
-- **PostgreSQL** database
-- **Drizzle ORM** for type-safe database queries
-
-### Services
-- CV Parser: Heuristic-based text parsing with confidence scoring
-- Job Search: Simulated live job fetching (extensible to real APIs)
-- Matcher: Weighted scoring algorithm (70% skills, 30% experience)
+```
+client/        Vite React SPA (root = client/, alias @ -> client/src)
+shared/        Schemas + route table shared between client and server
+backend/       FastAPI app
+  main.py        App factory, lifespan, middleware, exception handlers
+  config.py      Pydantic Settings (env-driven)
+  database.py    Async SQLAlchemy engine / session
+  models.py      ORM models
+  schemas.py     Pydantic response models (camelCase via alias generator)
+  tasks.py       In-memory task store (uploads run async)
+  rate_limit.py  Shared slowapi Limiter
+  routers/       analyze, jobs, tasks, health
+  services/      cv_parser, job_search (SearXNG), matcher
+searxng/       SearXNG container config (settings.yml)
+docker-compose.yml   backend + searxng
+```
 
 ## Prerequisites
 
-- Node.js 20.x or higher
-- Docker and Docker Compose (recommended) OR PostgreSQL 16.x
-- npm or yarn
+- Node.js 20+
+- Python 3.12 (only if running the backend without Docker)
+- Docker + Docker Compose (recommended for the backend + SearXNG)
 
-## Getting Started
+## Quick start
 
-### Quick Start with Docker (Recommended)
-
-The easiest way to get started is using Docker for the database:
-
-**1. Clone and install dependencies:**
-```bash
-git clone <your-repo-url>
-cd Career-Compass
-npm install
-```
-
-**2. Start PostgreSQL with Docker:**
-```bash
-npm run docker:up
-```
-
-**3. Configure environment:**
-```bash
-cp .env.example .env
-# The default .env is already configured for Docker
-```
-
-**4. Initialize the database:**
-```bash
-npm run db:push
-```
-
-**5. Start the development server:**
-```bash
-npm run dev
-```
-
-The application will be available at `http://localhost:5000`
-
-**Docker Commands:**
-- `npm run docker:up` - Start the database
-- `npm run docker:down` - Stop the database
-- `npm run docker:logs` - View database logs
-
----
-
-### Alternative: Manual PostgreSQL Setup
-
-If you prefer not to use Docker:
-
-### 1. Clone the repository
+### 1. Run the backend stack with Docker
 
 ```bash
-git clone <your-repo-url>
-cd Career-Compass
+cd backend && cp .env.example .env && cd ..
+docker compose up --build -d
 ```
 
-### 2. Install dependencies
+This starts:
+
+- `backend` on http://localhost:5000 (FastAPI, `/api/*` and `/api/health`)
+- `searxng` on http://localhost:8888
+
+The backend reaches SearXNG via the in-network URL
+`http://searxng:8080`, set explicitly in `docker-compose.yml`. The
+`SEARXNG_URL` value in `backend/.env` (default `http://localhost:8888`)
+is for running the backend on the host machine without Docker.
+
+### 2. Run the frontend
 
 ```bash
 npm install
-```
-
-### 3. Set up PostgreSQL
-
-Make sure PostgreSQL is installed and running on your system.
-
-**Ubuntu/Debian:**
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
-```
-
-**macOS:**
-```bash
-brew install postgresql@16
-brew services start postgresql@16
-```
-
-**Windows:**
-Download and install from [postgresql.org](https://www.postgresql.org/download/windows/)
-
-### 4. Create the database
-
-```bash
-# Access PostgreSQL
-sudo -u postgres psql
-
-# Create database and user
-CREATE DATABASE career_compass;
-CREATE USER your_user WITH PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE career_compass TO your_user;
-\q
-```
-
-### 5. Configure environment variables
-
-Copy the example environment file and update it with your settings:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and update the `DATABASE_URL`:
-
-```env
-DATABASE_URL=postgresql://your_user:your_password@localhost:5432/career_compass
-```
-
-### 6. Initialize the database
-
-Push the database schema:
-
-```bash
-npm run db:push
-```
-
-### 7. Start the development server
-
-```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5000`
+Vite serves the SPA on http://localhost:5173 and proxies `/api/*` to
+http://localhost:5000.
 
-## Available Scripts
+### 3. Production build
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run check` - Run TypeScript type checking
-- `npm run db:push` - Push database schema changes
-
-## Project Structure
-
-```
-.
-├── client/               # Frontend React application
-│   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── pages/       # Page components
-│   │   ├── hooks/       # Custom React hooks
-│   │   └── lib/         # Utilities and helpers
-│   └── index.html
-├── server/              # Backend Express application
-│   ├── services/        # Business logic services
-│   │   ├── cv_parser.ts
-│   │   ├── job_search.ts
-│   │   └── matcher.ts
-│   ├── routes.ts        # API routes
-│   └── index.ts         # Server entry point
-├── shared/              # Shared code between client and server
-│   ├── routes.ts        # Type-safe route definitions
-│   └── schema.ts        # Database schema and Zod validators
-└── migrations/          # Database migrations
+```bash
+npm run build       # outputs dist/public/
 ```
 
-## Database Schema
+## Running the backend without Docker
 
-### Jobs Table
-- `id` - Unique identifier
-- `title` - Job title
-- `company` - Company name
-- `location` - Job location
-- `type` - Employment type (Full-time, Part-time, etc.)
-- `description` - Job description
-- `requirements` - Array of requirements (JSONB)
-- `skillsRequired` - Array of required skills (JSONB)
-- `salaryRange` - Salary range
-- `postedAt` - Date posted
-- `sourceUrl` - External job posting URL
-- `isLive` - Whether from live search
-- `externalId` - External job board ID
+```bash
+cd backend
+python3.12 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python -m spacy download en_core_web_sm
+cp .env.example .env
+uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+```
 
-## Architecture
+You still need a SearXNG instance reachable at `SEARXNG_URL`. The
+easiest path is `docker compose up -d searxng` and leave
+`SEARXNG_URL=http://localhost:8888` in `backend/.env`.
 
-### CV Parsing
-The CV parser uses heuristic-based text extraction to identify:
-- Skills and technologies
-- Years of experience
-- Job titles and roles
-- Technical stack
+## Configuration
 
-Returns confidence scores and detailed failure reasons when parsing is unsuccessful.
+Backend settings live in `backend/config.py` and are loaded from
+`backend/.env`. Notable knobs:
 
-### Job Matching Algorithm
-- **70%** Skill match weight
-- **30%** Experience match weight
-- Title match bonus for relevant positions
-- Generates actionable insights on strengths and improvement areas
+| Variable             | Default                | Purpose                                       |
+| -------------------- | ---------------------- | --------------------------------------------- |
+| `ENVIRONMENT`        | `development`          | `production` disables `/docs`, `/redoc`, `/openapi.json` |
+| `SEARXNG_URL`        | `http://localhost:8888`| Overridden to `http://searxng:8080` in compose |
+| `MAX_UPLOAD_SIZE`    | `5242880` (5 MB)       | CV upload size cap                            |
+| `UPLOAD_RATE_LIMIT`  | `10/minute`            | slowapi rule on `POST /api/analyze/upload`    |
+| `TASK_EXPIRY`        | `3600` (s)             | In-memory task TTL                            |
+| `SQLITE_PATH`        | `./data/career_compass.db` | Backend DB file                          |
+| `CORS_ORIGINS`       | `["http://localhost:5173"]` | Allowed SPA origins                      |
 
-### Data Flow
-1. User uploads CV → CV Parser extracts profile data
-2. Profile passed to Matcher service
-3. Matcher compares against job listings (cached + live)
-4. Results sorted by compatibility score
-5. Detailed analysis displayed with skill gaps
+## API surface
 
-## Development Notes
+- `GET  /api/health`
+- `GET  /api/jobs` — list seeded jobs
+- `GET  /api/jobs/:id` — job detail (404 for live SearXNG-only jobs)
+- `POST /api/analyze/upload` — multipart CV upload, returns `{ taskId }` (202)
+- `GET  /api/tasks/:id` — poll analysis status / result
 
-- Path aliases configured: `@/` → `client/src/`, `@shared/` → `shared/`
-- Database changes use `npm run db:push` (Drizzle Kit)
-- File uploads limited to 5MB
-- Session storage used for passing analysis between pages
+In dev, OpenAPI is at `/docs` and `/redoc`. Both 404 when
+`ENVIRONMENT=production`.
 
-## Future Enhancements
+## Tests
 
-- Replace simulated job search with real API integrations (Indeed, LinkedIn, etc.)
-- Add user authentication and profile management
-- Implement job bookmarking and application tracking
-- Add company reviews and salary insights
-- Email notifications for new matching jobs
+```bash
+cd backend && source venv/bin/activate
+python -m pytest tests/ -v
+```
 
-## License
+Frontend type check + build:
 
-MIT
+```bash
+npx tsc --noEmit
+npm run build
+```
 
-## Contributing
+## Production notes / TODO
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+- **Rotate the SearXNG `secret_key`** before exposing the SearXNG
+  service. `searxng/settings.yml` ships with `secret_key: "please-change-me"`.
+  The directory is owned by the SearXNG container user (uid 977), so
+  edits require `sudo`:
+  ```bash
+  sudo chown -R "$USER":"$USER" searxng/
+  KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+  sed -i "s/please-change-me/${KEY}/" searxng/settings.yml
+  ```
+- Set `ENVIRONMENT=production` in `backend/.env` to disable docs UIs.
+- The compose file mounts `./backend:/app` for hot-reload. Drop that
+  bind mount for real deployments and rely on the image contents.
+- Background analysis state is in-memory only; restart drops in-flight
+  tasks. Move `TaskStore` to Redis if you need durability.
