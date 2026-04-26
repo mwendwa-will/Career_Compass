@@ -19,7 +19,19 @@ class Settings(BaseSettings):
     task_expiry: int = Field(3600, alias="TASK_EXPIRY")
     spacy_model: str = Field("en_core_web_sm", alias="SPACY_MODEL")
 
+    # Deployment environment. "development" exposes /docs and /redoc and
+    # accepts the looser CORS defaults. Anything else (e.g. "production")
+    # disables interactive API docs.
+    environment: str = Field("development", alias="ENVIRONMENT")
+
+    # Per-IP rate limit on /api/analyze/upload, in slowapi's string format.
+    upload_rate_limit: str = Field("10/minute", alias="UPLOAD_RATE_LIMIT")
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment.lower() not in ("development", "dev", "local", "test")
 
     @field_validator("cors_origins", mode="before")
     @classmethod

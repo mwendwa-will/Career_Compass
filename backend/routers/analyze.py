@@ -11,6 +11,7 @@ from sqlalchemy import select
 from config import settings
 from database import SessionLocal
 from models import Job
+from rate_limit import limiter
 from schemas import AnalysisResponse, TaskCreated
 from services.cv_parser import parse_cv
 from services.job_search import fetch_live_jobs
@@ -26,6 +27,7 @@ def get_store(request: Request) -> TaskStore:
 
 
 @router.post("/analyze/upload", response_model=TaskCreated, status_code=202)
+@limiter.limit(settings.upload_rate_limit)
 async def analyze_upload(
     request: Request,
     file: UploadFile = File(...),

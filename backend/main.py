@@ -11,10 +11,14 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pythonjsonlogger import jsonlogger
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import settings
 from database import init_db
+from rate_limit import limiter
 from seed import seed_if_empty
 from routers import analyze, health, jobs, tasks
 from tasks import create_task_store
@@ -61,7 +65,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(lifespan=lifespan)
+    docs_enabled = not settings.is_production
+    app = FastAPI(
+        lifespan=lifespan,
+        docs_url="/docs" if docs_enabled else None,
+        redoc_url="/redoc" if docs_enabled else None,
+        openapi_url="/openapi.json" if docs_enabled else None,
+    )
+
+    # Rate limiting (slowapi). Routers attach @limiter.limit(...) via
+    # app.state.limiter; the middleware enforces the configured limits.
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
 
     app.add_middleware(
         CORSMiddleware,
