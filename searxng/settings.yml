@@ -1,7 +1,7 @@
 server:
   port: 8080
   bind_address: 0.0.0.0
-  secret_key: "please-change-me"
+  secret_key: "eab05bb33012e641175559e9e99e8239bdd448ff13423e1bd86bc3b17e74e067"
   method: GET
 
 ui:
