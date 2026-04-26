@@ -7,9 +7,11 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from fastapi import FastAPI, Request
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pythonjsonlogger import jsonlogger
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import settings
 from database import init_db
@@ -31,6 +33,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await init_db()
     await seed_if_empty()
     app.state.task_store = create_task_store(settings.task_expiry)
+    # Strong references to fire-and-forget tasks so they aren't GC'd mid-flight
+    app.state.background_tasks = set()
 
     # Background cleanup for tasks
     stop_event = asyncio.Event()
@@ -75,9 +79,20 @@ def create_app() -> FastAPI:
         response.headers["X-Request-ID"] = request_id
         return response
 
+    @app.exception_handler(StarletteHTTPException)
+    async def handle_http_exception(request: Request, exc: StarletteHTTPException):
+        # Preserve FastAPI's default behavior for HTTPException (4xx, 404, etc.)
+        return await http_exception_handler(request, exc)
+
     @app.exception_handler(Exception)
     async def handle_exceptions(request: Request, exc: Exception):
-        logger.exception("Unhandled error", extra={"path": str(request.url), "request_id": getattr(request.state, "request_id", None)})
+        logger.exception(
+            "Unhandled error",
+            extra={
+                "path": str(request.url),
+                "request_id": getattr(request.state, "request_id", None),
+            },
+        )
         return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
 
     app.include_router(health.router, prefix="/api")

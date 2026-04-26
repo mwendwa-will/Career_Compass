@@ -1,15 +1,24 @@
 from __future__ import annotations
 
 import asyncio
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
+import logging
+
+from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
+from sqlalchemy import select
 
 from config import settings
+from database import SessionLocal
+from models import Job
 from schemas import AnalysisResponse, TaskCreated
+from services.cv_parser import parse_cv
+from services.job_search import fetch_live_jobs
+from services.matcher import match_profile_to_jobs
 from tasks import TaskStore
 
 router = APIRouter()
+logger = logging.getLogger("uvicorn.error")
 
 
 def get_store(request: Request) -> TaskStore:
@@ -20,7 +29,6 @@ def get_store(request: Request) -> TaskStore:
 async def analyze_upload(
     request: Request,
     file: UploadFile = File(...),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
     store: TaskStore = Depends(get_store),
 ):
     content = await file.read()
@@ -28,18 +36,12 @@ async def analyze_upload(
         return JSONResponse(status_code=400, content={"message": "File too large"})
 
     task_id = await store.create_task()
+    filename = file.filename
 
-    async def process_task():
-        from services.cv_parser import parse_cv
-        from services.job_search import fetch_live_jobs
-        from services.matcher import match_profile_to_jobs
-        from database import SessionLocal
-        from sqlalchemy import select
-        from models import Job
-
+    async def process_task() -> None:
         await store.update_task(task_id, status="processing", progress="Parsing CV...")
         try:
-            parsed_profile = await parse_cv(content, file.filename)
+            parsed_profile = await parse_cv(content, filename)
             if parsed_profile.failure:
                 await store.update_task(
                     task_id,
@@ -72,8 +74,13 @@ async def analyze_upload(
         except ValidationError as ve:
             await store.update_task(task_id, status="failed", error=str(ve))
         except Exception as exc:  # noqa: BLE001
+            logger.exception("CV analysis task failed", extra={"task_id": task_id})
             await store.update_task(task_id, status="failed", error=str(exc))
 
-    asyncio.create_task(process_task())
+    # Track strong references so GC doesn't drop the running task mid-flight.
+    bg_set: set[asyncio.Task] = request.app.state.background_tasks
+    task = asyncio.create_task(process_task())
+    bg_set.add(task)
+    task.add_done_callback(bg_set.discard)
 
     return TaskCreated(task_id=task_id)

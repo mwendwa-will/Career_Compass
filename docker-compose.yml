@@ -8,6 +8,12 @@ services:
       - "5000:5000"
     env_file:
       - ./backend/.env
+    environment:
+      # Override .env for the docker network: backend talks to searxng on
+      # the in-network service name + internal port (8080), not the host
+      # publish port (8888). Set here so a host-oriented backend/.env
+      # used for local dev still works.
+      SEARXNG_URL: http://searxng:8080
     volumes:
       - ./backend:/app
       - ./backend/data:/app/data
