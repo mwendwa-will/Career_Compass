@@ -48,7 +48,7 @@ export const parsedCvSchema = z.object({
   yearsExperience: z.number(),
   jobTitles: z.array(z.string()),
   techStack: z.array(z.string()),
-  rawText: z.string().optional(),
+  rawText: z.string().nullable().optional(),
   confidenceScore: z.number(), // 0-1
   failure: failureReasonSchema.optional().nullable(),
   location: z.string().optional().nullable(),
