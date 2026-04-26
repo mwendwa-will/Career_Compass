@@ -50,21 +50,23 @@ export function Navigation() {
           </div>
         </Link>
 
-        <div className="hidden items-center gap-1 md:flex">
-          <NavLink href="/" active={location === "/"}>
-            Upload
-          </NavLink>
-          <NavLink href="/results" active={onResults} disabled>
-            Results
-          </NavLink>
-          <a
-            href="https://github.com/mwendwa-will/Career_Compass"
-            target="_blank"
-            rel="noreferrer"
-            className="ml-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-mid hover:text-foreground"
-          >
-            GitHub
-          </a>
+        <div className="flex items-center gap-1">
+          <div className="hidden items-center gap-1 md:flex">
+            <NavLink href="/" active={location === "/"}>
+              Upload
+            </NavLink>
+            <NavLink href="/results" active={onResults} disabled>
+              Results
+            </NavLink>
+            <a
+              href="https://github.com/mwendwa-will/Career_Compass"
+              target="_blank"
+              rel="noreferrer"
+              className="ml-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-mid hover:text-foreground"
+            >
+              GitHub
+            </a>
+          </div>
           <button
             type="button"
             onClick={toggleTheme}
