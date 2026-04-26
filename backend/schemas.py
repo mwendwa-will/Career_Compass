@@ -53,6 +53,20 @@ class JobResponse(BaseSchema):
     external_id: Optional[str] = None
 
 
+class ParsedCVWarning(BaseSchema):
+    code: Literal[
+        "SKILLS_SECTION_MISSING",
+        "SKILLS_SECTION_EMPTY",
+        "EXPERIENCE_SECTION_MISSING",
+        "EXPERIENCE_SECTION_EMPTY",
+        "EDUCATION_SECTION_MISSING",
+        "LOW_CONFIDENCE",
+        "THIN_CONTENT",
+    ]
+    message: str
+    actionable_step: str = Field(default="")
+
+
 class ParsedCV(BaseSchema):
     skills: List[str]
     years_experience: int
@@ -61,6 +75,7 @@ class ParsedCV(BaseSchema):
     raw_text: Optional[str] = None
     confidence_score: float
     failure: Optional[FailureReason] = None
+    warnings: List[ParsedCVWarning] = Field(default_factory=list)
     location: Optional[str] = None
     preferred_job_type: Optional[str] = None
 

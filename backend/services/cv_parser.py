@@ -10,7 +10,7 @@ import pdfplumber
 from pdfminer.pdfdocument import PDFTextExtractionNotAllowed
 from docx import Document
 
-from schemas import FailureReason, ParsedCV
+from schemas import FailureReason, ParsedCV, ParsedCVWarning
 
 CONFIDENCE_THRESHOLD = 0.3
 
@@ -225,10 +225,13 @@ def _section_body_is_empty(text_lower: str, aliases: List[str]) -> bool:
     return False
 
 
-def _diagnose_missing_sections(text: str, skills: List[str], titles: List[str], years: int) -> FailureReason | None:
-    """Identify which CV sections are missing or empty and return a tailored
-    MISSING_SECTIONS failure. Returns None when the CV looks complete enough
-    to score."""
+def _diagnose_missing_sections(
+    text: str, skills: List[str], titles: List[str], years: int
+) -> List[ParsedCVWarning]:
+    """Identify which CV sections are missing/empty and return a list of
+    NON-BLOCKING warnings. The matcher will still produce results from
+    whatever signals were found; the UI surfaces these warnings so the user
+    knows what to improve to climb the rankings."""
     text_lower = text.lower()
 
     has_skills_heading = _has_section(text_lower, SECTION_ALIASES["skills"])
@@ -242,71 +245,68 @@ def _diagnose_missing_sections(text: str, skills: List[str], titles: List[str], 
         text_lower, SECTION_ALIASES["experience"]
     )
 
-    # A CV is missing a "skills" signal if neither the heading is present nor
-    # any recognized skill keyword was extracted from the prose.
     skills_signal_missing = not has_skills_heading and not skills
-
-    # An experience section is "missing" if there's no heading AND no
-    # date-range or "X years experience" hint anywhere in the document.
     has_date_ranges = bool(re.search(r"20\d{2}\s*[–-]\s*(20\d{2}|present)", text_lower))
     experience_signal_missing = (
         not has_experience_heading and not has_date_ranges and years == 0 and not titles
     )
 
-    missing: List[str] = []
-    fixes: List[str] = []
+    warnings: List[ParsedCVWarning] = []
 
     if skills_signal_missing:
-        missing.append("Skills")
-        fixes.append("Add a 'Skills' section listing technologies you know (e.g. Python, React, AWS).")
+        warnings.append(
+            ParsedCVWarning(
+                code="SKILLS_SECTION_MISSING",
+                message="No Skills section detected — we matched on titles and experience only.",
+                actionable_step="Add a 'Skills' section listing technologies you use (e.g. Python, React, AWS) for sharper matches.",
+            )
+        )
     elif skills_body_empty:
-        missing.append("Skills section is empty")
-        fixes.append("Your Skills heading is empty — list at least 5 skills under it as bullets.")
+        warnings.append(
+            ParsedCVWarning(
+                code="SKILLS_SECTION_EMPTY",
+                message="Your Skills section is empty.",
+                actionable_step="List at least 5 skills under the Skills heading to improve match accuracy.",
+            )
+        )
 
     if experience_signal_missing:
-        missing.append("Experience")
-        fixes.append(
-            "Add a 'Work experience' section with role title, company, and dates (e.g. 2022 – Present)."
+        warnings.append(
+            ParsedCVWarning(
+                code="EXPERIENCE_SECTION_MISSING",
+                message="No work experience detected — we couldn't infer seniority.",
+                actionable_step="Add a 'Work experience' section with role, company, and dates (e.g. 2022 – Present).",
+            )
         )
     elif experience_body_empty:
-        missing.append("Experience section is empty")
-        fixes.append("Your Experience heading is empty — list at least one role with dates and bullets.")
-
-    # Detect "skeleton" / placeholder CVs: under 200 chars of meaningful prose
-    # and zero of the three core sections.
-    word_count = len(re.findall(r"\b\w+\b", text))
-    if (
-        word_count < 80
-        and not has_skills_heading
-        and not has_experience_heading
-        and not has_education_heading
-    ):
-        return FailureReason(
-            code="MISSING_SECTIONS",
-            message="Your CV looks incomplete — we couldn't find Skills, Experience, or Education sections.",
-            actionable_step="Add at least Skills and Work experience sections with bullet points, then re-upload.",
-            suggested_fixes=[
-                "Add a 'Skills' section listing technologies you know.",
-                "Add a 'Work experience' section with role, company, and dates.",
-                "Add an 'Education' section with your most recent qualification.",
-            ],
+        warnings.append(
+            ParsedCVWarning(
+                code="EXPERIENCE_SECTION_EMPTY",
+                message="Your Experience section is empty.",
+                actionable_step="List at least one role with dates and bullets so we can score seniority.",
+            )
         )
 
-    if not missing:
-        return None
+    if not has_education_heading:
+        warnings.append(
+            ParsedCVWarning(
+                code="EDUCATION_SECTION_MISSING",
+                message="No Education section detected.",
+                actionable_step="Optional, but adding an 'Education' section can unlock entry-level matches.",
+            )
+        )
 
-    primary = missing[0]
-    headline = (
-        f"Your CV {primary.lower()} — we couldn't extract anything from it."
-        if "is empty" in primary
-        else f"We couldn't find a usable {primary} section in your CV."
-    )
-    return FailureReason(
-        code="MISSING_SECTIONS",
-        message=headline,
-        actionable_step=fixes[0],
-        suggested_fixes=fixes,
-    )
+    word_count = len(re.findall(r"\b\w+\b", text))
+    if word_count < 80:
+        warnings.append(
+            ParsedCVWarning(
+                code="THIN_CONTENT",
+                message="Your CV is very short — matches will be approximate.",
+                actionable_step="Expand each role with 2-3 bullets describing impact, technologies, and outcomes.",
+            )
+        )
+
+    return warnings
 
 
 def _score_confidence(skills: List[str], years: int, titles: List[str], text: str) -> float:
@@ -436,22 +436,32 @@ async def parse_cv(file_bytes: bytes, original_filename: str) -> ParsedCV:
     years = _extract_years(text)
     confidence = _score_confidence(skills, years, titles, text)
 
-    diagnosis = _diagnose_missing_sections(text, skills, titles, years)
-    if diagnosis is not None:
-        return ParsedCV(
-            skills=[],
-            years_experience=0,
-            job_titles=[],
-            tech_stack=[],
-            raw_text=None,
-            confidence_score=0.0,
-            failure=diagnosis,
+    warnings = _diagnose_missing_sections(text, skills, titles, years)
+
+    # Only hard-fail when the CV gives us literally nothing to score against:
+    # no skills, no titles, no years of experience. In that case keyword
+    # matching has nothing to feed the matcher with, so we ask for a richer
+    # CV. Otherwise we proceed with whatever signals we have and surface the
+    # gaps as non-blocking warnings.
+    if not skills and not titles and years == 0:
+        return create_failure(
+            "MISSING_SECTIONS",
+            "Your CV doesn't include any recognisable skills, job titles, or experience yet.",
+            [
+                "Add a 'Skills' section listing technologies you know (e.g. Python, React, AWS).",
+                "Add a 'Work experience' section with role, company, and dates (e.g. 2022 – Present).",
+                "Mention any years of experience explicitly, e.g. '3 years of experience'.",
+            ],
         )
 
     if confidence < CONFIDENCE_THRESHOLD:
-        return create_failure(
-            "LOW_CONFIDENCE",
-            "We couldn't confidently parse your CV. Please improve formatting and resubmit.",
+        # Soft-warn instead of hard-fail — we still have enough to score.
+        warnings.append(
+            ParsedCVWarning(
+                code="LOW_CONFIDENCE",
+                message="Confidence is low — matches may be approximate.",
+                actionable_step="Re-export your CV with cleaner formatting and explicit section headings.",
+            )
         )
 
     return ParsedCV(
@@ -462,6 +472,7 @@ async def parse_cv(file_bytes: bytes, original_filename: str) -> ParsedCV:
         raw_text=text[:500],
         confidence_score=confidence,
         failure=None,
+        warnings=warnings,
         location=None,
         preferred_job_type=None,
     )

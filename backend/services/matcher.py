@@ -41,10 +41,15 @@ def match_profile_to_jobs(
         matched_skills = sorted(normalized_req.intersection(normalized_profile_skills))
         missing_skills = sorted(normalized_req.difference(normalized_profile_skills))
 
-        if normalized_req:
+        if normalized_req and normalized_profile_skills:
             skill_score = len(matched_skills) / len(normalized_req)
+        elif not normalized_profile_skills:
+            # Profile has no extracted skills (e.g. CV without a Skills
+            # section). Fall back to a neutral score so titles + experience
+            # can still produce a meaningful ranking instead of zeroing out.
+            skill_score = 0.4
         else:
-            # Neutral score when no required skills are provided
+            # Job has no required skills listed — neutral.
             skill_score = 0.5
 
         req_years = 5 if "senior" in title.lower() else 2

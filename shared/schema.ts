@@ -43,6 +43,22 @@ export const failureReasonSchema = z.object({
 
 export type FailureReason = z.infer<typeof failureReasonSchema>;
 
+export const parsedCvWarningSchema = z.object({
+  code: z.enum([
+    "SKILLS_SECTION_MISSING",
+    "SKILLS_SECTION_EMPTY",
+    "EXPERIENCE_SECTION_MISSING",
+    "EXPERIENCE_SECTION_EMPTY",
+    "EDUCATION_SECTION_MISSING",
+    "LOW_CONFIDENCE",
+    "THIN_CONTENT",
+  ]),
+  message: z.string(),
+  actionableStep: z.string().default(""),
+});
+
+export type ParsedCVWarning = z.infer<typeof parsedCvWarningSchema>;
+
 export const parsedCvSchema = z.object({
   skills: z.array(z.string()),
   yearsExperience: z.number(),
@@ -51,6 +67,7 @@ export const parsedCvSchema = z.object({
   rawText: z.string().nullable().optional(),
   confidenceScore: z.number(), // 0-1
   failure: failureReasonSchema.optional().nullable(),
+  warnings: z.array(parsedCvWarningSchema).default([]),
   location: z.string().optional().nullable(),
   preferredJobType: z.string().optional().nullable(),
 });

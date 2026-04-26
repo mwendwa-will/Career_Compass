@@ -139,6 +139,38 @@ export default function Results() {
       </header>
 
       <div className="container flex-1 px-6 py-8">
+        {data.parsedProfile.warnings && data.parsedProfile.warnings.length > 0 && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-6 rounded-xl border border-warning/30 bg-warning/10 p-5"
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle
+                className="mt-0.5 h-5 w-5 flex-shrink-0 text-warning"
+                aria-hidden
+              />
+              <div className="flex-1 space-y-2">
+                <h2 className="font-display text-sm font-bold text-foreground">
+                  We matched you anyway — but your CV is missing some signals
+                </h2>
+                <ul className="space-y-1.5 text-sm text-foreground/80">
+                  {data.parsedProfile.warnings.map((w) => (
+                    <li key={w.code} className="flex flex-col gap-0.5">
+                      <span className="font-medium">{w.message}</span>
+                      {w.actionableStep && (
+                        <span className="text-xs text-muted-foreground">
+                          {w.actionableStep}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-12">
           {/* Sidebar — profile + matches list */}
           <aside className="lg:col-span-5 xl:col-span-4">
