@@ -54,23 +54,12 @@ export function JobCard({ job, match, isSelected, onClick }: JobCardProps) {
       animate={{ opacity: 1, y: 0 }}
       onClick={onClick}
       className={cn(
-        "group relative w-full overflow-hidden rounded-2xl bg-card p-5 text-left transition-all duration-300",
+        "group relative w-full overflow-hidden rounded-xl bg-card p-5 text-left transition-all duration-300",
         isSelected
-          ? "shadow-lift ring-2 ring-primary"
-          : "shadow-soft ring-1 ring-inset ring-border/60 hover:shadow-lift hover:ring-primary/30"
+          ? "shadow-lift border-l-4 border-primary pl-4"
+          : "shadow-soft ring-1 ring-inset ring-border/40 hover:shadow-lift hover:-translate-y-1"
       )}
     >
-      {isSelected && (
-        <span
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-1 rounded-t-2xl"
-          style={{
-            backgroundImage:
-              "linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary-soft)))",
-          }}
-        />
-      )}
-
       <div className="flex items-start gap-4">
         {/* Match ring */}
         {match && (

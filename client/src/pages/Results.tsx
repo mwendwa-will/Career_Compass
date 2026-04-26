@@ -96,44 +96,44 @@ export default function Results() {
   const topTone = scoreTone(topScore);
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface-low">
+    <div className="flex min-h-screen flex-col bg-surface">
       <Navigation />
 
-      {/* Stats bar — at-a-glance result summary */}
-      <header className="border-b border-border/40 bg-surface">
-        <div className="container px-6 py-6">
-          <button
-            onClick={() => setLocation("/")}
-            className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Analyse another CV
-          </button>
+      {/* Stats bar — Stitch "Candidate Profile" rounded card on surface-low */}
+      <header className="container px-6 pt-8">
+        <button
+          onClick={() => setLocation("/")}
+          className="mb-5 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:opacity-80"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Analyse another CV
+        </button>
 
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div>
-              <span className="eyebrow">Analysis complete</span>
-              <h1 className="mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl">
-                {sortedMatches.length} role{sortedMatches.length === 1 ? "" : "s"} ranked for you.
+        <div className="flex flex-wrap items-center justify-between gap-8 rounded-2xl bg-surface-low p-8">
+          <div className="flex flex-col gap-1">
+            <span className="eyebrow text-on-surface-variant">Candidate Profile</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
+                {data.parsedProfile.jobTitles[0] ?? "Your profile"}
               </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {data.parsedProfile.jobTitles[0]
-                  ? `Profile: ${data.parsedProfile.jobTitles[0]}`
-                  : "Profile parsed"}
-                {" · "}
-                {data.parsedProfile.yearsExperience} years experience
-                {" · "}
-                {data.parsedProfile.skills.length} skills detected
-              </p>
+              <span className="h-1.5 w-1.5 rounded-full bg-border/60" />
+              <span className="font-medium text-muted-foreground">
+                {data.parsedProfile.yearsExperience} yrs exp
+              </span>
+              <span className="h-1.5 w-1.5 rounded-full bg-border/60" />
+              <span className="font-medium text-muted-foreground">
+                {data.parsedProfile.skills.length} skills
+              </span>
             </div>
+          </div>
 
-            <div className="flex items-center gap-6">
-              <Stat label="Top match" value={`${topScore}%`} tone={topTone} />
-              <Stat
-                label="Confidence"
-                value={`${Math.round(data.parsedProfile.confidenceScore * 100)}%`}
-              />
-            </div>
+          <div className="flex gap-12">
+            <Stat label="Top match" value={`${topScore}%`} tone={topTone} />
+            <Stat
+              label="Confidence"
+              value={`${Math.round(data.parsedProfile.confidenceScore * 100)}%`}
+              muted
+            />
           </div>
         </div>
       </header>
@@ -145,9 +145,9 @@ export default function Results() {
             <ProfileSummary data={data} />
 
             <div className="mt-6">
-              <div className="mb-3 flex items-center justify-between px-1">
-                <h2 className="eyebrow">Matches</h2>
-                <span className="text-xs text-muted-foreground">
+              <div className="mb-3 flex items-center justify-between px-2">
+                <h2 className="eyebrow text-on-surface-variant">Potential Opportunities</h2>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Sorted by score
                 </span>
               </div>
@@ -194,22 +194,24 @@ function Stat({
   label,
   value,
   tone,
+  muted,
 }: {
   label: string;
   value: string;
   tone?: "success" | "warning" | "danger";
+  muted?: boolean;
 }) {
   return (
-    <div className="text-right">
-      <div className="eyebrow text-muted-foreground">{label}</div>
-      <div
+    <div className="flex flex-col">
+      <span className="eyebrow text-on-surface-variant mb-1">{label}</span>
+      <span
         className={cn(
-          "font-display text-3xl font-bold tracking-tight",
-          tone ? toneText[tone] : "text-foreground"
+          "font-display text-5xl font-black italic tracking-tighter leading-none",
+          tone ? toneText[tone] : muted ? "text-primary-soft" : "text-primary"
         )}
       >
         {value}
-      </div>
+      </span>
     </div>
   );
 }
@@ -368,13 +370,57 @@ function JobDetail({ match }: { match: MatchResult }) {
 
   return (
     <div className="space-y-8">
-      {/* Header card */}
-      <div className="surface-card-lift overflow-hidden">
-        <div className="grid gap-6 p-6 md:p-8 md:grid-cols-[1fr_auto] md:items-start">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 text-xs">
+      {/* Stitch detail header — surface-low rounded-2xl, gauge on left */}
+      <div className="rounded-2xl bg-surface-low p-8 md:p-10">
+        <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-center">
+          {/* Score gauge */}
+          <div className="relative h-32 w-32 flex-shrink-0">
+            <svg width="128" height="128" viewBox="0 0 50 50" className="-rotate-90">
+              <circle
+                cx="25"
+                cy="25"
+                r="22"
+                fill="none"
+                strokeWidth="2.5"
+                className="stroke-surface-high"
+              />
+              <circle
+                cx="25"
+                cy="25"
+                r="22"
+                fill="none"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeDasharray={C}
+                strokeDashoffset={offset}
+                className={cn("transition-[stroke-dashoffset] duration-700", {
+                  "stroke-success": tone === "success",
+                  "stroke-warning": tone === "warning",
+                  "stroke-danger": tone === "danger",
+                })}
+                style={{ filter: "drop-shadow(0 0 4px hsl(var(--primary) / 0.2))" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span
+                className={cn(
+                  "font-display text-3xl font-black tracking-tighter leading-none",
+                  toneText[tone]
+                )}
+              >
+                {match.matchPercentage}%
+              </span>
+              <span className="mt-1 text-[8px] font-bold uppercase tracking-widest text-on-surface-variant">
+                Score
+              </span>
+            </div>
+          </div>
+
+          {/* Title + meta + actions */}
+          <div className="flex-grow text-center lg:text-left">
+            <div className="mb-2 flex flex-wrap items-center justify-center gap-2 text-xs lg:justify-start">
               {job.isLive && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-tint px-2.5 py-1 font-semibold uppercase tracking-wider text-primary">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-fixed px-2.5 py-1 font-semibold uppercase tracking-wider text-primary">
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />
                     <span className="relative h-1.5 w-1.5 rounded-full bg-primary" />
@@ -382,103 +428,58 @@ function JobDetail({ match }: { match: MatchResult }) {
                   Live · {job.sourceName ?? "SearXNG"}
                 </span>
               )}
-              <span className="rounded-full bg-surface-mid px-2.5 py-1 font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="rounded-full bg-surface-mid px-2.5 py-1 font-semibold uppercase tracking-wider text-on-surface-variant">
                 {job.type}
               </span>
             </div>
 
-            <h2 className="mt-3 font-display text-2xl font-bold leading-tight md:text-3xl text-balance">
+            <h2 className="font-display text-3xl font-black tracking-tight leading-tight md:text-4xl text-balance">
               {job.title}
             </h2>
 
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm font-medium text-muted-foreground lg:justify-start">
               <span className="inline-flex items-center gap-1.5">
-                <Building2 className="h-3.5 w-3.5" />
-                <span className="font-medium text-foreground">{job.company}</span>
+                <Building2 className="h-4 w-4" />
+                <span className="text-foreground">{job.company}</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" />
+                <MapPin className="h-4 w-4" />
                 {job.location}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5" />
+                <Calendar className="h-4 w-4" />
                 {job.postedAt}
               </span>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap justify-center gap-4 lg:justify-start">
               {job.sourceUrl && (
                 <a
                   href={job.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="btn-gradient inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                  className="btn-gradient inline-flex h-12 items-center gap-2 rounded-xl px-6 text-sm font-bold hover:scale-[1.02]"
                 >
-                  Apply on {job.sourceName ?? "source"}
+                  Apply with Compass
                   <ExternalLink className="h-4 w-4" />
                 </a>
               )}
               <Button
                 variant="outline"
-                className="h-11 rounded-xl border-border/60 bg-card px-5 text-sm font-semibold hover:bg-surface-mid"
+                className="h-12 rounded-xl border-border/30 bg-transparent px-6 text-sm font-bold text-primary hover:bg-surface-mid"
               >
                 Save match
               </Button>
             </div>
-          </div>
 
-          {/* Score gauge */}
-          <div className="flex flex-col items-center md:items-end">
-            <div className="relative">
-              <svg width="128" height="128" viewBox="0 0 50 50" className="-rotate-90">
-                <circle
-                  cx="25"
-                  cy="25"
-                  r="22"
-                  fill="none"
-                  strokeWidth="3"
-                  className={cn({
-                    "stroke-success/15": tone === "success",
-                    "stroke-warning/15": tone === "warning",
-                    "stroke-danger/15": tone === "danger",
-                  })}
-                />
-                <circle
-                  cx="25"
-                  cy="25"
-                  r="22"
-                  fill="none"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeDasharray={C}
-                  strokeDashoffset={offset}
-                  className={cn("transition-[stroke-dashoffset] duration-700", {
-                    "stroke-success": tone === "success",
-                    "stroke-warning": tone === "warning",
-                    "stroke-danger": tone === "danger",
-                  })}
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span
-                  className={cn("font-display text-3xl font-bold leading-none", toneText[tone])}
-                >
-                  {match.matchPercentage}%
-                </span>
-                <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Match
-                </span>
+            {job.salaryRange && (
+              <div className="mt-6 flex items-center gap-3 text-sm">
+                <span className="eyebrow text-on-surface-variant">Salary</span>
+                <span className="font-display font-bold">{job.salaryRange}</span>
               </div>
-            </div>
+            )}
           </div>
         </div>
-
-        {job.salaryRange && (
-          <div className="flex items-center justify-between gap-4 border-t border-border/40 bg-surface-low px-6 py-4 md:px-8">
-            <span className="eyebrow text-muted-foreground">Estimated salary</span>
-            <span className="font-display text-lg font-bold">{job.salaryRange}</span>
-          </div>
-        )}
       </div>
 
       {/* Two-column analysis */}
